@@ -5,7 +5,7 @@
 | Nama | NIM | Kontribusi |
 |---|---|---|
 | steven indramer | 103072400070 | Latencty is Zero |
-| delon nichollas hermawan |  |  
+|  |  |  
 
 ## Pitfall 1: [nama pitfall] — ditulis oleh [nama]
 
