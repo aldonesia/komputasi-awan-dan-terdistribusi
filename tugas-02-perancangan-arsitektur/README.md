@@ -1,4 +1,15 @@
 # Tugas 2 (Pekan 2) — Perancangan Arsitektur untuk FoodGo
+| Temuan Masalah di Tugas 1 | Dampak di Tugas 1 | Solusi Arsitektur di Tugas 2 (SOA + Pub-Sub) | Mengapa Ini Menyelesaikan Masalah? |
+| :--- | :--- | :--- | :--- |
+| **Pitfall 1 & 2:** Network is Reliable & Latency is Zero *(Tak ada timeout, pemanggilan langsung antar modul)* | Modul Pesanan menunggu Modul Pembayaran secara *synchronous* tanpa batas. *Thread pool* habis $\rightarrow$ *Crash*. | **Event-Driven via Message Broker (Pub-Sub)** | Setelah pembayaran sukses, Modul Pesanan menerbitkan event `OrderPaid` ke *broker*. Modul Pesanan tidak perlu menunggu Modul Resto/Kurir merespon. Ketergantungan jaringan diisolasi. |
+| **Pitfall 3:** Always-On Assumption *(Server crash total & perlu restart manual)* | Jika satu fungsi *error*, seluruh aplikasi monolitik mati total (*downtime* menyeluruh). | **Service-Oriented Architecture (SOA)** | Setiap modul (Pesanan, Pembayaran, Resto, Kurir) di-*deploy* dalam *container/process* terpisah. Jika Modul Kurir *crash*, Modul Pesanan dan Katalog Resto tetap menyala dan bisa melayani pengguna. |
+| **Pitfall 4:** Single Point of Failure *(Satu server monolitik menangani semua beban)* | Trafik promo melonjak $\rightarrow$ server kewalahan $\rightarrow$ semua fitur (pesan, bayar, kurir) lumpuh bersamaan. | **Independent Scaling & Message Queue** | 1. Modul yang kebanjiran trafik (misal: Katalog Resto) bisa di-*scale* terpisah.<br>2. *Message Broker* bertindak sebagai penampung antrean (*buffer*) saat *peak season* agar server tidak kewalahan. |
+
+**Masalah Utama (Root Cause)**
+"Keterikatan Ketat yang Berlebihan (Tight Coupling) pada Satu Proses Monolitik Tunggal."
+
+**Kesimpulan Analisis**
+"Berdasarkan analisis Tugas 1, empat pitfall yang ditemukan (Network Reliability, Latency, Always-On Assumption, dan SPOF) pada dasarnya berakar dari satu masalah utama: Tight Coupling pada arsitektur monolitik. Seluruh modul berjalan dalam satu proses dan saling bergantung secara langsung. Oleh karena itu, solusinya adalah decoupling—memecah monolit menjadi layanan-layanan mandiri (Modul Pesanan, Pembayaran, Katalog Resto, dan Kurir) yang terhubung melalui pola SOA dan Publish-Subscribe."
 
 **Materi terkait:** Architectural style (Layered, SOA, Peer-to-Peer, Publish-Subscribe).
 
