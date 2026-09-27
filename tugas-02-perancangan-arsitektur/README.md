@@ -13,7 +13,7 @@
 
 "Berdasarkan analisis Tugas 1, empat pitfall yang ditemukan (Network Reliability, Latency, Always-On Assumption, dan SPOF) pada dasarnya berakar dari satu masalah utama: Tight Coupling pada arsitektur monolitik. Seluruh modul berjalan dalam satu proses dan saling bergantung secara langsung. Oleh karena itu, solusinya adalah decoupling, memecah monolit menjadi layanan-layanan mandiri (Modul Pesanan, Pembayaran, Katalog Resto, dan Kurir) yang terhubung melalui pola SOA dan Publish-Subscribe."
 
-============================================================================================================
+=============================================================================
 
 **Materi terkait:** Architectural style (Layered, SOA, Peer-to-Peer, Publish-Subscribe).
 
