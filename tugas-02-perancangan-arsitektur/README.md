@@ -1,4 +1,13 @@
 # Tugas 2 (Pekan 2) — Perancangan Arsitektur untuk FoodGo
+
+**Kelompok:** [1]
+
+| Nama | NIM | Kontribusi |
+|---|---|---|
+| Ida Ayu Putri Suryapatni Basundari | 103072400068 | Pencarian solusi dan analisis masalah |
+| I Wayan Juanesa Ryan Pradita | 103072430012 | Alur dan design diagram |
+
+
 | Temuan Masalah di Tugas 1 | Dampak di Tugas 1 | Solusi Arsitektur di Tugas 2 (SOA + Pub-Sub) | Mengapa Ini Menyelesaikan Masalah? |
 | :--- | :--- | :--- | :--- |
 | **Pitfall 1 & 2:** Network is Reliable & Latency is Zero *(Tak ada timeout, pemanggilan langsung antar modul)* | Modul Pesanan menunggu Modul Pembayaran secara *synchronous* tanpa batas. *Thread pool* habis $\rightarrow$ *Crash*. | **Event-Driven via Message Broker (Pub-Sub)** | Setelah pembayaran sukses, Modul Pesanan menerbitkan event `OrderPaid` ke *broker*. Modul Pesanan tidak perlu menunggu Modul Resto/Kurir merespon. Ketergantungan jaringan diisolasi. |
@@ -13,7 +22,7 @@
 
 "Berdasarkan analisis Tugas 1, empat pitfall yang ditemukan (Network Reliability, Latency, Always-On Assumption, dan SPOF) pada dasarnya berakar dari satu masalah utama: Tight Coupling pada arsitektur monolitik. Seluruh modul berjalan dalam satu proses dan saling bergantung secara langsung. Oleh karena itu, solusinya adalah decoupling, memecah monolit menjadi layanan-layanan mandiri (Modul Pesanan, Pembayaran, Katalog Resto, dan Kurir) yang terhubung melalui pola SOA dan Publish-Subscribe."
 
-=============================================================================
+## Batas Hasil Analisis
 
 **Materi terkait:** Architectural style (Layered, SOA, Peer-to-Peer, Publish-Subscribe).
 
