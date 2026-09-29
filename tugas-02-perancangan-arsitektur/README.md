@@ -1,25 +1,26 @@
-# Tugas 2 (Pekan 2) — Perancangan Arsitektur untuk FoodGo
+# Tugas 2: Perancangan Arsitektur Sistem FoodGo
 
-**Materi terkait:** Architectural style (Layered, SOA, Peer-to-Peer, Publish-Subscribe).
+**Kelompok:** [Kelompok 13]
+**Anggota:** 
+1. [Steven indamer]
+2. [Delon Nicholas]
 
-## Studi Kasus
+---
 
-Melanjutkan Tugas 1: FoodGo butuh sistem yang **decoupled** agar tim kurir dan tim resto tidak saling mengganggu ketika salah satu modul diperbarui/deploy ulang. Saat ini semua modul (pesanan, pembayaran, notifikasi kurir, katalog resto) berjalan sebagai satu aplikasi monolitik — sekali deploy, semua modul ikut restart dan berisiko downtime total.
+## 1. Pemilihan Gaya Arsitektur & Justifikasi
 
-## Tugas Kelompok
+Untuk menyelesaikan masalah *tight-coupling* pada sistem monolitik FoodGo, kami memilih **kombinasi Service-Oriented Architecture (SOA) dan Publish-Subscribe (Pub-Sub)**. 
 
-1. Pilih **satu** gaya arsitektur utama: **Service-Oriented Architecture (SOA)** atau **Publish-Subscribe**. Boleh dikombinasikan (mis. SOA untuk service inti + Pub-Sub untuk notifikasi), tapi harus dijustifikasi kenapa kombinasi ini yang dipilih.
-2. Gambarkan minimal 4 komponen berikut dan interaksinya: modul Pesanan, modul Pembayaran, modul Kurir/Notifikasi, modul Katalog Resto (dan message broker/API gateway jika relevan).
-3. Jelaskan alur satu skenario penuh secara end-to-end di diagram (misalnya: pelanggan buat pesanan → bayar → resto terima notifikasi → kurir ditugaskan) — tunjukkan komponen mana berkomunikasi dengan siapa, dan **jenis komunikasinya** (sinkron/asinkron, request-response/event).
-4. Analisis tertulis: kenapa gaya ini mengatasi masalah *coupling* dari Tugas 1, dan apa trade-off-nya (mis. Pub-Sub menambah kompleksitas debugging karena alur tidak linear).
+**Justifikasi:**
+* **SOA (Microservices):** Kami memecah monolit menjadi layanan terpisah (Pesanan, Pembayaran, Katalog, Kurir) agar tiap tim dapat melakukan *deploy* ulang tanpa menyebabkan *downtime* total. Interaksi yang membutuhkan respons instan dari pengguna (seperti melihat katalog dan membayar) ditangani secara sinkron (*request-response*).
+* **Publish-Subscribe (Event-Driven):** Digunakan khusus untuk alur setelah pembayaran berhasil. Alur seperti notifikasi ke restoran dan pencarian kurir tidak perlu ditunggu oleh pengguna secara *real-time*. Dengan Pub-Sub melalui *Message Broker*, Service Pesanan tidak akan tertahan (*blocked*) jika Service Kurir sedang lambat atau *down*.
 
-## Cara Membuat Diagram (Gratis, Cukup Laptop)
+---
 
-Tidak perlu software berbayar. Dua opsi:
+## 2. Diagram Arsitektur (End-to-End)
 
-**Opsi A — Mermaid di dalam Markdown (disarankan).** Ditulis sebagai teks biasa di `README.md`, otomatis dirender jadi diagram oleh GitHub — tidak perlu install apa pun.
+Diagram di bawah menunjukkan komponen utama beserta API Gateway dan Message Broker. 
 
-````markdown
 ```mermaid
 graph LR
   Client[Pelanggan] -->|HTTP request pesan| OrderSvc[Service Pesanan]
@@ -28,30 +29,93 @@ graph LR
   Broker -->|subscribe| NotifSvc[Service Notifikasi Kurir]
   Broker -->|subscribe| RestoSvc[Service Katalog Resto]
 ```
-````
 
-**Opsi B — draw.io / diagrams.net** (gratis, jalan di browser tanpa akun, atau app desktop offline di [app.diagrams.net](https://app.diagrams.net/)). Ekspor sebagai `.png` dan simpan di folder `diagram/`.
+---
 
-## Struktur Submission
+## 3. Penjelasan Alur Skenario Penuh (End-to-End)
 
-```
-tugas-02-perancangan-arsitektur/
-├── README.md          # Analisis + diagram Mermaid (jika Opsi A) atau referensi ke diagram/
-├── JURNAL.md
-└── diagram/            # File .png/.drawio jika pakai Opsi B
-```
+## Penjelasan Alur Skenario End-to-End
 
-## Rubrik Penilaian (Tugas 2)
+Berikut adalah penjelasan alur satu skenario penuh mulai dari pelanggan membuat pesanan hingga resto dan kurir menerima notifikasi, berdasarkan diagram arsitektur di atas:
 
-| Komponen | Bobot | Kriteria |
-|---|---|---|
-| Ketepatan pemilihan gaya arsitektur | 20% | Justifikasi SOA/Pub-Sub sesuai kebutuhan *decoupling* di skenario |
-| Kelengkapan & kejelasan diagram | 30% | Semua komponen kunci ada, jenis komunikasi (sinkron/asinkron) jelas ditandai |
-| Analisis trade-off | 30% | Bukan hanya kelebihan — kekurangan/kompleksitas baru juga dibahas |
-| Proses & kontribusi kelompok | 20% | `JURNAL.md`, commit history |
+### 1. Pelanggan Membuat Pesanan
+* **Komponen yang berkomunikasi:** `Client` (Pelanggan) $\rightarrow$ `OrderSvc` (Service Pesanan)
+* **Pesan / Interaksi:** Pelanggan mengirimkan `HTTP request pesan` untuk membuat pesanan baru.
+* **Jenis Komunikasi:** **Sinkron** (Pola *Request-Response*). Client menunggu balasan langsung dari Service Pesanan.
 
-## Batasan Penggunaan AI (Level 2)
+### 2. Pemrosesan Pembayaran
+* **Komponen yang berkomunikasi:** `OrderSvc` (Service Pesanan) $\rightarrow$ `PaymentSvc` (Service Pembayaran)
+* **Pesan / Interaksi:** Service Pesanan melakukan pemanggilan `RPC sinkron` ke Service Pembayaran untuk memvalidasi dan memotong saldo.
+* **Jenis Komunikasi:** **Sinkron** (Pola *Request-Response*). Service Pesanan tertahan (*blocking*) sampai proses pembayaran selesai dan mengembalikan status.
 
-Kebijakan **Level 2 (AI Assisted Idea Generation & Structuring)** berlaku — lihat [`../RUBRIK-UMUM.md`](../RUBRIK-UMUM.md). Boleh memakai AI untuk brainstorming komponen apa saja yang umum ada di gaya arsitektur SOA/Pub-Sub; **tidak boleh** meminta AI menggambar diagram final atau menuliskan analisis trade-off yang tinggal ditempel. Catat pemakaian AI di "Log Penggunaan AI" pada `JURNAL.md`.
+### 3. Penerbitan Event Pesanan
+* **Komponen yang berkomunikasi:** `OrderSvc` (Service Pesanan) $\rightarrow$ `Broker` (Message Broker)
+* **Pesan / Interaksi:** Setelah pembayaran berhasil, Service Pesanan melakukan `publish event OrderCreated` ke Message Broker.
+* **Jenis Komunikasi:** **Asinkron** (Pola *Event-Driven / Publish*). Service Pesanan tidak perlu menunggu proses lanjutan dari service lain (*non-blocking*).
 
-- Diagram Mermaid/draw.io yang "terlalu generik" (identik dengan contoh tutorial di internet tanpa penyesuaian ke kasus FoodGo) akan dinilai rendah pada komponen kelengkapan & kejelasan diagram.
+### 4. Notifikasi ke Resto dan Kurir (Berjalan Paralel)
+* **Komponen A:** `Broker` (Message Broker) $\rightarrow$ `RestoSvc` (Service Katalog Resto / Dapur)
+  * **Pesan / Interaksi:** Service Katalog Resto melakukan `subscribe` ke Message Broker untuk menerima event `OrderCreated` agar restoran bisa mulai memasak.
+  * **Jenis Komunikasi:** **Asinkron** (Pola *Event-Driven / Subscribe*).
+* **Komponen B:** `Broker` (Message Broker) $\rightarrow$ `NotifSvc` (Service Notifikasi Kurir)
+  * **Pesan / Interaksi:** Service Notifikasi Kurir melakukan `subscribe` ke Message Broker untuk menerima event `OrderCreated` agar sistem mulai menugaskan kurir terdekat.
+  * **Jenis Komunikasi:** **Asinkron** (Pola *Event-Driven / Subscribe*).
+
+---
+
+### Tabel Ringkasan Komunikasi
+
+| Langkah | Pengirim | Penerima | Pesan / Interaksi | Jenis Komunikasi | Pola Interaksi |
+|---|---|---|---|---|---|
+| **1** | `Client` | `OrderSvc` | HTTP request pesan | **Sinkron** | Request-Response |
+| **2** | `OrderSvc` | `PaymentSvc` | RPC sinkron | **Sinkron** | Request-Response |
+| **3** | `OrderSvc` | `Broker` | publish event `OrderCreated` | **Asinkron** | Event (Publish) |
+| **4a** | `Broker` | `RestoSvc` | subscribe event | **Asinkron** | Event (Subscribe) |
+| **4b** | `Broker` | `NotifSvc` | subscribe event | **Asinkron** | Event (Subscribe) |
+
+---
+
+## 4. Analisis Tertulis: Mengatasi Coupling & Trade-Off Arsitektur
+
+### A. Mengapa Gaya Arsitektur Ini Mengatasi Masalah Coupling (Tugas 1)
+
+Pada Tugas 1, FoodGo menggunakan arsitektur monolitik di mana semua modul berjalan dalam satu proses dan saling memanggil secara sinkron tanpa batas waktu (*no timeout*). Hal ini menyebabkan *tight coupling* dan *Single Point of Failure* (SPOF). 
+
+Penerapan kombinasi **SOA (Microservices) + Publish-Subscribe** mengatasi masalah tersebut melalui:
+
+1. **Isolasi Kegagalan (Fault Isolation):**
+   * **Masalah Tugas 1:** Modul pesanan tertahan (*blocked*) menunggu modul pembayaran/kurir yang lambat, sehingga *thread pool* habis dan server *crash*.
+   * **Solusi Arsitektur Baru:** Pemrosesan lanjut setelah pembayaran dilakukan secara asinkron via Message Broker. Jika `NotifSvc` (Service Kurir) atau `RestoSvc` (Service Resto) mengalami masalah atau *down*, `OrderSvc` (Service Pesanan) tetap dapat menerima dan menyelesaikan transaksi pembayaran dari pelanggan tanpa tertahan. Pesan `OrderCreated` akan tersimpan aman di dalam Message Broker sampai service tujuan aktif kembali.
+
+2. **Independensi Deployment & Skalabilitas:**
+   * **Masalah Tugas 1:** Perubahan kecil pada modul kurir mengharuskan seluruh aplikasi monolit di-*deploy* ulang dan menyebabkan *downtime* total.
+   * **Solusi Arsitektur Baru:** Modul dipisah menjadi *service* terpisah yang berkomunikasi lewat antarmuka terdefinisi (API/Events). Tim Kurir dapat memperbarui atau melakukan *re-deploy* pada `NotifSvc` kapan saja tanpa perlu menghentikan `OrderSvc` atau `PaymentSvc`.
+
+3. **Pemisahan Beban Kerja (Decoupled Workload):**
+   * **Masalah Tugas 1:** Lonjakan trafik pesanan saat jam makan siang membuat seluruh proses monolitik kehabisan sumber daya CPU/Memori.
+   * **Solusi Arsitektur Baru:** Setiap *service* dapat di-scale secara terpisah sesuai kebutuhan. Saat trafik melonjak, kita hanya perlu menduplikasi (*scale out*) `OrderSvc` tanpa perlu memboroskan sumber daya untuk memperbesar *instance* `PaymentSvc`.
+
+---
+
+### B. Analisis Trade-Off dan Kompleksitas Baru
+
+Meskipun arsitektur ini berhasil menyelesaikan masalah *coupling*, penerapan SOA dan Pub-Sub membawa beberapa tantangan dan kompleksitas baru bagi tim engineering FoodGo:
+
+1. **Kompleksitas Debugging dan Tracing (Alur Tidak Linear):**
+   * **Tantangan:** Pada sistem monolitik, alur eksekusi bersifat linear dan berada dalam satu *call stack* log server. Pada pola Pub-Sub, setelah event `OrderCreated` dikirim ke Broker, alur eksekusi terpecah secara asinkron ke berbagai service. Jika pesanan tidak sampai ke restoran, tim sulit menentukan apakah masalah ada pada pemancar event, Message Broker, atau penerima event.
+   * **Mitigasi:** Tim harus menerapkan **Distributed Tracing** (misal: Jaeger / Zipkin) dan menyertakan *Correlation ID* pada setiap event untuk melacak perjalanan satu transaksi di berbagai service.
+
+2. **Konsistensi Data Seketika Hilang (*Eventual Consistency*):**
+   * **Tantangan:** Data tidak lagi konsisten secara instan (*immediate consistency*). Ada jeda waktu (*latency*) antara saat pembayaran selesai dikonfirmasi dengan saat restoran menerima notifikasi pesanan.
+   * **Mitigasi:** Tim harus merancang penanganan skenario kegagalan (*edge cases*), misalnya dengan menerapkan **Dead Letter Queue (DLQ)** pada Message Broker untuk menampung event yang gagal diproses oleh konsumen.
+
+3. **Overhead Operasional & Infrastruktur Tambahan:**
+   * **Tantangan:** Menambahkan komponen baru seperti Message Broker (misal: RabbitMQ) dan pemisahan service meningkatkan biaya operasional, kompleksitas pemeliharaan server, dan konfigurasi jaringan.
+   * **Mitigasi:** Menggunakan *Managed Message Broker Service* di cloud untuk mengurangi beban pemeliharaan infrastruktur secara mandiri oleh tim internal.
+
+
+
+
+
+
+
