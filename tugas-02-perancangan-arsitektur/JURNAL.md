@@ -1,13 +1,10 @@
-### 2. Isi untuk file `JURNAL.md`
-Format ini mengikuti gambar `image_7017db.png`[cite: 2] dan `image_7017fa.png`[cite: 3].
-
-```markdown
+``markdown
 # Jurnal Proses — Tugas 2
 
 ## Informasi Kelompok
-- **Anggota 1:** [Nama Anggota 1] (NIM)
-- **Anggota 2:** [Nama Anggota 2] (NIM)
-- **Anggota 3:** [Nama Anggota 3] (NIM)
+- **Anggota 1:** Naufal Fudhail (103072400013)
+- **Anggota 2:** Diandra Nanditya Mulkis (103072400075)
+- **Anggota 3:** Samuel Nelson Wabiser (103072400111)
 
 ## 28 September 2026
 - **Opsi arsitektur yang dipertimbangkan:** Kami mempertimbangkan antara menggunakan murni SOA (semua service berkomunikasi via REST API sinkron) atau memadukannya dengan arsitektur *Event-Driven* (Publish-Subscribe) melalui bantuan Message Broker.
