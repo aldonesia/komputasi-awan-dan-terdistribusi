@@ -1,6 +1,6 @@
 # Jurnal Proses — Tugas 2
 
-## [Tanggal 29/09/2026]
+## [29/09/2026] 
 - Opsi arsitektur yang dipertimbangkan:
 Untuk mengatasi permasalahan coupling dan risiko downtime total pada sistem monolitik FoodGo, kami memilih kombinasi Service-Oriented Architecture (SOA / Microservices) dan Publish-Subscribe (Pub-Sub).
 - Kenapa akhirnya pilih [SOA/Pub-Sub]:
@@ -13,4 +13,4 @@ Aplikasi food delivery seperti FoodGo sulit jika hanya memakai satu gaya saja. O
 
 | Tanggal | Tool AI | Prompt yang diberikan | Ringkasan saran/ide AI | Bagaimana diolah jadi tulisan/kode sendiri |
 |---|---|---|---|---|
-| ... | ... | ... | ... | ... |
+| 29/09/2026 | Gemini | "Bagaimana cara memisahkan alur synchronous dan asynchronous pada aplikasi food delivery menggunakan kombinasi SOA dan Pub-Sub?" | Memberikan saran pemisahan: transaksi/pembayaran awal menggunakan synchronous REST/gRPC, sedangkan notifikasi, dapur, dan penugasan kurir menggunakan asynchronous event bus. | Menyesuaikan alur tersebut ke 4 modul utama FoodGo, lalu merancang sendiri urutan step-by-step transaksi di tabel alur end-to-end pada README.md |
