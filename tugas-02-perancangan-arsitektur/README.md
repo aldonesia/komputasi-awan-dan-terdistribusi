@@ -78,7 +78,28 @@ graph TD
 1.
 
 **Analisis Tertulis(Faiz)
-2.
+
+Dengan memilih arsitektur **Microservices menggunakan pola Publish-Subscribe (Pub-Sub)** yang didukung *Message Broker* (misalnya Apache Kafka atau RabbitMQ), cara modul-modul berkomunikasi berubah secara mendasar. Alih-alih menggunakan pola *request-response* yang sinkron, sekarang kita memakai pola *event-driven* yang asinkron. Cara ini langsung mengatasi masalah skalabilitas dan *cascading failure* yang pernah dialami FoodGo ketika masih memakai arsitektur monolitik sebelumnya.
+
+### 1. Bagaimana Pub-Sub Mengatasi Masalah *Coupling* (Ketergantungan)
+
+Di arsitektur monolitik yang dibahas di Tugas 1, sistem mengalami **Tight Coupling** (ketergantungan erat). Modul Pesanan harus memanggil Modul Pembayaran langsung dan menunggu (*blocking*) sampai proses selesai. Pola Pub-Sub menyelesaikan masalah ini lewat dua mekanisme isolasi:
+
+* **Fault Isolation (Temporal Decoupling):** Modul-modul sekarang tidak lagi menunggu satu sama lain secara *real-time*. Ketika pembayaran berhasil, Modul Pembayaran cukup mempublikasikan *event* `payment-success` ke *Message Broker* dan langsung melepaskan *resource* (CPU/Thread) untuk melayani transaksi lain. Jika Modul Notifikasi Kurir sedang bermasalah atau lambat, Modul Pembayaran tidak terpengaruh sama sekali. Pesan akan tersimpan aman di antrean (*queue*) *Broker* hingga Modul Kurir kembali stabil dan siap memprosesnya.
+
+* **Deployment Isolation (Spatial Decoupling):** Karena modul-modul tidak lagi terikat dalam satu proses (berada di kontainer/server berbeda) dan berkomunikasi lewat *Broker*, pembaruan sistem menjadi lebih fleksibel. Tim *engineer* Katalog Resto dapat merilis ulang modul mereka di tengah hari tanpa perlu memulai ulang Modul Pesanan atau Pembayaran. Ini menghilangkan risiko *downtime* total karena pembaruan satu fitur kecil.
+
+### 2. Trade-off dan Kompleksitas Baru Arsitektur Pub-Sub
+
+Walaupun membantu ketersediaan dan skalabilitas, penerapan Pub-Sub menambah lapisan kompleksitas yang tidak ada pada sistem monolitik. Solusi ini mengharuskan tim *engineering* menghadapi beberapa kompromi (*trade‑off*):
+
+* **Kompleksitas Debugging dan Tracing:** Pada aplikasi monolitik, alur eksekusi bersifat linear; melacak *bug* dapat dilakukan dengan membaca log dari atas ke bawah. Pada sistem Pub-Sub, alur data bersifat non‑linear dan tersebar di berbagai *service*. Jika sebuah pesanan gagal mendapatkan kurir, tim harus melacak log di berbagai *service* yang berbeda. Hal ini memaksa tim untuk menambahkan *Distributed Tracing* (misalnya menempelkan *Correlation ID* unik pada setiap pesanan) agar pergerakan *event* dapat dilacak secara *end-to-end*.
+
+* **Tantangan Eventual Consistency (Konsistensi Tertunda):** Sistem tidak lagi diperbarui secara instan. Ada jeda waktu (latensi jaringan) antara saat pelanggan melihat layar “Pembayaran Berhasil” dan saat Modul Katalog Resto menerima *event* tersebut. Sistem berada dalam status *Eventual Consistency* (akan konsisten pada akhirnya, namun tidak seketika). Hal ini menuntut penyesuaian di sisi UI/UX agar pelanggan tidak merasa aplikasi macet saat status pesanan belum berubah di sisi resto.
+
+* **Risiko Duplikasi Pesan dan Syarat Idempotensi:** Infrastruktur jaringan tidak selalu sempurna. *Message Broker* umumnya beroperasi dengan prinsip pengiriman *At-Least-Once Delivery*, yang berarti jika terjadi gangguan koneksi singkat, *Broker* mungkin mengirimkan *event* `payment-success` yang sama dua kali. Untuk mencegah resto memasak dua pesanan yang sama atau sistem memanggil dua kurir untuk satu order, setiap modul penerima pesan (*subscriber*) wajib dirancang bersifat **Idempotent**—yaitu mampu mengenali dan mengabaikan *event* duplikat tanpa mengubah *state* secara ganda.
+
+* **Perpindahan Titik Kegagalan (New SPOF):** Arsitektur ini sangat bergantung pada ketersediaan *Message Broker*. Jika *Broker* tumbang dan tidak dikonfigurasi dengan mode klaster (*High Availability*), seluruh aliran komunikasi asinkron akan terhenti, menjadikan *Broker* tersebut sebagai *Single Point of Failure* yang baru. Hal ini membutuhkan manajemen infrastruktur tambahan yang lebih kompleks.
 
 ## Struktur Submission
 
