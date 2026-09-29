@@ -1,4 +1,3 @@
-``markdown
 # Jurnal Proses — Tugas 2
 
 ## Informasi Kelompok
