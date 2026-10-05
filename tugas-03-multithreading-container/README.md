@@ -1,5 +1,12 @@
 # Tugas 3 (Pekan 3) — Efisiensi Proses & Kontainer
 
+**Kelompok:** [1]
+
+| Nama | NIM | Kontribusi |
+|---|---|---|
+| Ida Ayu Putri Suryapatni Basundari | 103072400068 | Code order_simulator.py awal (tanpa lock) dan penjelasan setelah menggunakan lock |
+| I Wayan Juanesa Ryan Pradita | 103072430012 | Melengkapi code order_simulatorpy (dengan lock) dan penjelasan saat tanpa lock |
+
 **Materi terkait:** Threading, Virtualization, Containers.
 
 ## Studi Kasus
