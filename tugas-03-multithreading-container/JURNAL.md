@@ -8,7 +8,7 @@
 ## Percobaan dengan Lock
 - Hasil `processed_count` setelah perbaikan: hasilnya konsisten di 100
 ![Hasil dengan lock](bukti/dengan_lock.png)
-- Kalau yang sebelumnya (tanpa Lock) proses/threadnya itu saling berebut dan bikin data "processed_count" jadi hancur, Lock disini bisa dibilang kayak "satpam" atau "sistem antrean".
+- Kalau yang sebelumnya (tanpa Lock) proses/threadnya itu saling berebut dan bikin data "processed_count" jadi hancur, Lock disini bisa dibilang kayak "satpam" atau "sistem antrean". Dengan adanya Lock, operasi penambahan data menjadi atomik (tidak dapat disela di tengah jalan), sehingga tidak ada update data yang hilang (lost update) dan hasil akhirnya selalu tepat 100.
 
 ## Kendala Docker
 - Error yang ditemui saat `docker build`/`docker run` dan cara memperbaikinya: ...
