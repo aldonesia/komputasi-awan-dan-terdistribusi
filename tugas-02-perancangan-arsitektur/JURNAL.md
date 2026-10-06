@@ -1,9 +1,19 @@
 # Jurnal Proses — Tugas 2
 
-## [Tanggal]
-- Opsi arsitektur yang dipertimbangkan: ...
-- Kenapa akhirnya pilih [SOA/Pub-Sub]: ...
-- Revisi diagram (versi 1 → versi 2, apa yang berubah dan kenapa): ...
+## [9/29/2026]
+- Opsi arsitektur yang dipertimbangkan: 
+*Service-Oriented Architecture* (SOA/*microservice*) untuk service inti + *Publish-Subscribe* untuk notifikasi dan koordinasi antar-tim.
+
+- Kenapa akhirnya pilih [SOA/Pub-Sub]: Tim kami memutuskan untuk mengkombinasikan SOA dan Pub-Sub karena dua alasan:
+    1. Modul Pembayaran lebih cocok untuk menggunakan SOA karena butuh hasil langsung.
+    2. Modul pemberitahuan ke resto dan kurir lebih cocok menggunakan Pub-Sub karena modul bisa di-deploy ulang tanpa menganggu satu sama lain.
+
+
+- Revisi diagram Versi 1 -> Versi 2:
+
+   - Diagram difokuskan pada alur transaksi pelanggan, sedangkan aplikasi resto dan kurir cukup terhubung lewat subscription ke broker. Dengan begitu, terlihat jelas bagian mana yang sinkron (RPC/REST) dan mana yang asinkron.
+
+   - Jalur `OrderSvc` → `PaymentSvc` diberi label `RPC sinkron`, dan event `OrderCreated` dari broker ke `NotifSvc` serta `RestoSvc` digambarkan lebih jelas. Ini agar sesuai dengan landasan teori di awal dokumen: pembayaran butuh kepastian request-response sebelum event dikirim, sementara resto dan kurir tetap terpisah (decoupled) dari jalur pembayaran.
 
 ## Log Penggunaan AI (Level 2)
 
@@ -11,4 +21,7 @@
 
 | Tanggal | Tool AI | Prompt yang diberikan | Ringkasan saran/ide AI | Bagaimana diolah jadi tulisan/kode sendiri |
 |---|---|---|---|---|
-| ... | ... | ... | ... | ... |
+| 9/29/2026 | Claude | Berikan penjelasan yang komprehensif, terstruktur, dan mudah dipahami mengenai Service-Oriented Architecture (SOA) dan Publish-Subscribe (Pub-Sub) Pattern, dengan mencakup poin-poin berikut: - Definisi & Konsep Dasar: Definisikan apa itu SOA dan Pub-Sub secara jelas. | Service-Oriented Architecture (SOA) adalah gaya arsitektur yang menyusun aplikasi sebagai kumpulan layanan independen dan dapat digunakan ulang, yang saling berkomunikasi melalui antarmuka standar (seperti SOAP atau REST), umumnya dengan pola request-response, dan sering dibantu service registry serta Enterprise Service Bus. Sementara itu, Publish-Subscribe (Pub-Sub) adalah pola pesan asinkron di mana publisher mengirim pesan atau event ke sebuah topik melalui message broker, lalu semua subscriber yang berlangganan topik tersebut menerimanya secara otomatis tanpa publisher perlu mengenal mereka. SOA berfokus pada pembagian sistem menjadi layanan bisnis yang reusable, sedangkan Pub-Sub berfokus pada distribusi event yang longgar (loosely coupled) ke banyak penerima, dan keduanya dapat dipadukan: Pub-Sub sering dipakai di dalam SOA agar komunikasi antar layanan lebih fleksibel dan responsif. | Sebelum menentukan arsitektur yang cocok, kami ingin membahas apa itu SOA dan Pub-Sub. SOA (*Service-Oriented Architecture*) adalah gaya arsitektur yang memecah sistem menjadi beberapa layanan atau *service* terpisah yang saling memanggil lewat jaringan. Sedangkan *Publish-Subscribe* (Pub-Sub) yaitu gaya komunikasi di mana pengirim (*publisher*) menyiarkan pesan ke saluran tertentu, dan pihak yang berminat (*subscriber*) menerimanya, tanpa keduanya saling mengenal.Dari kedua definisi di atas, kami memilih *arsitektur kombinasi* yaitu **SOA untuk service inti dan Publish-Subscribe untuk notifikasi dan koordinasi, asinkron.** Adapun penjelasannya sebagai berikut. |
+| 9/29/2026 | Claude | Jenis Komunikasi: Jelaskan jenis komunikasi yang digunakan dalam SOA (misalnya synchronous/asynchronous, request-response, enterprise service bus) dan dalam Pub-Sub (asynchronous event-driven, decoupling producer-consumer). | SOA identik dengan komunikasi terarah (consumer memanggil provider tertentu, biasanya sinkron dan sering melalui ESB), sedangkan Pub-Sub identik dengan komunikasi berbasis kejadian (publisher menyiarkan event, subscriber bereaksi secara asinkron). Keduanya saling melengkapi: request-response dipakai ketika hasil dibutuhkan segera, sementara Pub-Sub dipakai ketika banyak pihak perlu bereaksi terhadap satu kejadian tanpa saling bergantung. | - PIlihan kami: Kombinasi SOA+Pub-Sub. Alur yang butuh jawaban langsung memakai *request-response*, dan setiap panggilannya diberi *timeout* dan *retry* terbatas. Alur yang berupa "beri tahu pihak lain bahwa sesuatu terjadi" memakai *event* atau Pub-Sub. |
+| 9/29/2026 | Claude | - Konsep Broker dalam Pub-Sub: Jelaskan secara mendalam bagaimana peran Message Broker bekerja sebagai perantara (misalnya topik, antrian, subscriber filtering, dan manajemen load).| Message broker bukan sekadar "pipa pesan". Ia mengelola topik untuk pengelompokan, antrean untuk mengisolasi subscriber, filtering untuk relevansi, serta buffering, scaling, ACK, retry, dan DLQ untuk menjaga keandalan dan mengatur beban. Karena itulah publisher dan subscriber dapat berjalan independen, dengan trade-off berupa tambahan komponen infrastruktur yang harus dikelola dan berpotensi menjadi titik kritis bila tidak dijalankan dalam cluster. | Digunakan sebagai referensi dalam pembuatan diagram |
+| 9/29/2026 | Claude | Skenario End-to-End: Berikan contoh skenario real-world (studi kasus nyata, misal sistem e-commerce) yang menggambarkan alur kerja end-to-end dari sebuah sistem yang mengintegrasikan konsep SOA dan pola Pub-Sub. | Dalam sistem e-commerce, SOA menyediakan struktur (layanan mandiri dengan kontrak jelas dan komunikasi sinkron untuk operasi yang butuh jawaban langsung), sedangkan Pub-Sub menyediakan kelenturan (event yang menggerakkan reaksi berantai secara asinkron dan longgar). Kombinasi keduanya menghasilkan sistem yang responsif bagi pengguna, tahan terhadap gangguan, dan mudah diperluas.| Digunakan sebagai referensi dalam pembuatan diagram End-to-End.
