@@ -1,11 +1,19 @@
 # Jurnal Proses — Tugas 3
 
 ## Percobaan tanpa Lock
-- Hasil `processed_count` yang didapat: ...
-- Kenapa bisa meleset (jelaskan mekanisme race condition dengan kata sendiri): ...
+- Hasil `processed_count` yang didapat: 26 (Diqri)
+- Kenapa bisa meleset (jelaskan mekanisme race condition dengan kata sendiri): Hal ini terjadi karena proses penambahan nilai dipecah ke dalam tahapan membaca nilai (current_value = processed_count), lalu menghitungnya (current_value + 1), dan menulisnya kembali. Ketika banyak thread berjalan bersamaan tanpa lock, dua atau lebih thread bisa membaca current_value yang sama persis di waktu yang nyaris bersamaan (misalnya sama-sama membaca angka 10). Akibatnya, saat mereka masing-masing menghitung current_value + 1 (menjadi 11) dan menulisnya kembali ke processed_count, penambahan dari thread sebelumnya tertimpa (overwritten) oleh thread setelahnya. Seharusnya nilai bertambah dua kali, tapi karena nilainya sama, penambahan itu dihitung sebagai satu kali. Inilah penyebab banyak pesanan yang terlewat sehingga total akhirnya di bawah 100.
 
+- Hasil `processed_count` yang didapat: 3 (Vaylan)
+- Kenapa bisa meleset (jelaskan mekanisme race condition dengan kata sendiri):
+Penyebab utama angka hancur hingga tersisa 3 adalah karena adanya jeda `time.sleep(0.0001)` yang disisipkan tepat setelah variabel `processed_count` dibaca oleh thread. Saat 100 thread dijalankan serentak tanpa Lock, hampir semua thread mengambil snapshot nilai awal yang sama (yaitu 0). Ketika thread-thread tersebut tertahan sejenak di baris `time.sleep`, mereka secara bergantian bangun dan menuliskan hasil kalkulasinya (`0 + 1 = 1`) ke dalam memori. Akibatnya terjadi efek *domino overwrite*—ratusan proses penambahan nilai yang seharusnya diakumulasikan malah terus-menerus menimpa variabel global dengan angka yang sama. Data penambahan dari puluhan thread hangus begitu saja, sehingga hasil akhir yang berhasil selamat hanya menyentuh angka 3 dari target 100.
+
+- Hasil `processed_count` yang didapat: 36 (Kenzie)
+- Kenapa bisa meleset: Analoginya seperti 100 orang yang mencoba memperbarui satu catatan secara bersamaan tanpa aturan antrean. Ketika satu thread sedang membaca nilai counter, thread lain sudah keburu membaca nilai lama yang sama sebelum sempat diperbarui. Akibatnya, saat masing-masing thread menuliskan hasil penambahannya, data dari thread sebelumnya menjadi tertimpa (overwritten). Karena tidak ada mekanisme Lock yang mengatur giliran, banyak proses penambahan yang terbuang dan hasil akhirnya hanya tercatat 36 dari target 100 pesanan.
+- 
 ## Percobaan dengan Lock
-- Hasil `processed_count` setelah perbaikan: ...
+- Hasil `processed_count` setelah perbaikan: 100
+- Penjelasan singkat: Setelah ditambahkan `with lock:`, setiap thread wajib mengantri saat membaca dan mengupdate variabel `processed_count`. Hal ini mencegah terjadinya race condition sehingga seluruh 100 pesanan berhasil dihitung dengan akurat.
 
 ## Kendala Docker
 - Error yang ditemui saat `docker build`/`docker run` dan cara memperbaikinya: ...
@@ -16,4 +24,6 @@
 
 | Tanggal | Tool AI | Prompt yang diberikan | Ringkasan saran/ide AI | Bagaimana diolah jadi tulisan/kode sendiri |
 |---|---|---|---|---|
-| ... | ... | ... | ... | ... |
+| 03 Oktober 2026 | Gemini | mengapa perintah with lock dan tanpa with lock hasilnya sama aja yaitu 100, apakah ada kesalahan | Hal tersebut bisa terjadi karena meskipun jumlah worker diubah menjadi 100, operasi penambahan sederhana seperti `processed_count += 1` di dalam interpreter Python dieksekusi sangat cepat. Selain itu, jeda `time.sleep` pada kode sebelumnya diletakkan sebelum proses penambahan, sehingga saat tahap penambahan angka dilakukan, thread sering kali sudah kadung mengeksekusinya secara berurutan tanpa sempat disela oleh thread lain. Agar race condition benar-benar "jebol" dan menghasilkan angka di bawah 100 saat tanpa lock, kita perlu memecah proses increment menjadi dua langkah (baca -> jeda/sela -> tulis ulang) agar ada celah bagi thread lain untuk menimpa data. | Mengganti fungsi `process_order` menjadi memisahkan proses pembacaan dan penulisan variabel dengan `time.sleep(0.0001)` di antaranya agar pemicu bentrokan thread dapat terjadi. |
+| 05 Oktober 2026 | Gemini | bantu aku menganalisis mengapa hasil dari running tanpa locknya 3, sedangkan temanku bisa mendapatkan 26? apakah ada kesalahan dalam programnya atau mungkin emg tanpa lock sistemnya random memilih angka? | AI menjelaskan bahwa perolehan angka 3 vs 26 pada pengujian tanpa Lock bukan disebabkan oleh kesalahan program atau fungsi acak, melainkan akibat sifat nondeterministik dari OS thread scheduler dan CPU context switching. Adanya jeda `time.sleep(0.0001)` di antara pembacaan dan penulisan variabel menyebabkan mayoritas thread membaca nilai awal yang sama secara bersamaan. | Penyebab utama angka hancur hingga tersisa 3 adalah karena adanya jeda `time.sleep(0.0001)` yang disisipkan tepat setelah variabel `processed_count` dibaca oleh thread. Saat 100 thread dijalankan serentak tanpa Lock, hampir semua thread mengambil snapshot nilai awal yang sama. |
+| 06 Oktober 2026 | Gemini | Tolong bantu jelaskan kenapa hasil tanpa lock saya dapet angka 36 dan beda sama temen, tapi pake analogi yang gampang dipahami | AI menjelaskan bahwa perolehan angka 36 pada pengujian tanpa Lock bukan disebabkan oleh kesalahan program atau fungsi acak, melainkan akibat sifat nondeterministik dari OS thread scheduler dan CPU context switching. Adanya jeda mikro di antara pembacaan dan penulisan variabel menyebabkan mayoritas thread membaca nilai awal yang sama secara bersamaan. | Penyebab utama hasil counter bernilai 36 dari target 100 adalah terjadinya race condition di mana thread-thread saling menimpa data (overwrite). Dengan menggunakan analogi antrean, penjelasan disusun untuk menggambarkan situasi di mana 100 orang berebut memperbarui satu lembar catatan tanpa aturan. Karena tidak ada mekanisme Lock yang mengatur giliran, banyak thread membaca data lama yang belum terbarui sehingga akumulasi angka yang tercatat hanya menyisakan 36 pesanan. |
