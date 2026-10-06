@@ -1,11 +1,12 @@
 # Jurnal Proses — Tugas 3
 
 ## Percobaan tanpa Lock
-- Hasil `processed_count` yang didapat: ...
-- Kenapa bisa meleset (jelaskan mekanisme race condition dengan kata sendiri): ...
+- Hasil `processed_count` yang didapat: 38
+- Kenapa bisa meleset (jelaskan mekanisme race condition dengan kata sendiri): Meskipun perintah processed_count += 1 terlihat seperti satu tindakan saja, tapi sebenarnya di balik layar komputer ia sedang mengerjakannya dalam tiga langkah terpisah, yaitu : membaca nilai saat ini dari memori, menambahkannya dengan angka satu, lalu menyimpannya kembali. Nah, masalah ini muncul ketika sistem menjalankan banyak thread secara bersamaan, yang membuat langkah-langkah tersebut menjadi rentan untuk bertabrakan. Kurang lebih bayangannya sepert ini, Thread A dan Thread B membaca angka 10 di sepersekian detik yang sama, keduanya akan memproses hitungan masing-masing dan sama-sama menyimpan angka 11 kembali ke memori. Jadi, satu hitungannya hilang karena saling menimpa, padahal seharusnya nilainya bertambah dua kali menjadi 12. Karena puluhan thread ini terus-menerus berbalapan membaca dan menulis tanpa adanya antrean yang teratur, banyak proses pembaruan data yang menguap begitu saja, sehingga wajar saja jika hasil akhirnya meleset jauh dari target 100 dan hanya tercatat sebanyak 38.
 
 ## Percobaan dengan Lock
-- Hasil `processed_count` setelah perbaikan: ...
+- Hasil `processed_count` setelah perbaikan: 100
+- Nah hasil penghitungannya ini bisa kembali akurat ke angka 100 itu karena penggunaan metode Lock dari library threading yang bertindak layaknya kunci pintu pelindung untuk area kode yang sensitif. Sederhananya, ketika sebuah thread ingin memperbarui data, ia diwajibkan untuk mengambil kunci tersebut terlebih dahulu, jika kuncinya kebetulan sedang dipakai oleh thread lain, ia harus sabar menunggu dan mengantre di luar. Dengan adanya sistem penjagaan ini, thread yang memegang kunci bisa dengan tenang menyelesaikan tiga tahapan prosesnya, yaitu : membaca, menambah, dan menyimpan nilai—tanpa perlu khawatir diserobot atau diganggu oleh proses lain, untuk kemudian melepaskan kuncinya setelah selesai. Mekanisme inilah yang memaksa pembaruan data berjalan rapi satu per satu secara berurutan di titik kritisnya, sehingga efektif mencegah insiden data yang saling menimpa dan memastikan seratus thread yang berjalan berhasil mencatat angka tambahannya dengan sempurna.
 
 ## Kendala Docker
 - Error yang ditemui saat `docker build`/`docker run` dan cara memperbaikinya: ...
