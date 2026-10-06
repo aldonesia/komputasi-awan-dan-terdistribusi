@@ -17,7 +17,7 @@ NUM_WORKERS = 10        # jumlah thread pekerja
 processed_count = 0
 
 # TODO 1: Buat objek Lock di sini untuk melindungi `processed_count`.
-# lock = threading.Lock()
+lock = threading.Lock()
 
 
 def process_order(order_id: int) -> None:
@@ -33,7 +33,11 @@ def process_order(order_id: int) -> None:
     # Langkah 2: bungkus increment dengan `with lock:` dan buktikan hasilnya
     #            selalu tepat NUM_ORDERS. Simpan bukti kedua kondisi ini
     #            di JURNAL.md / folder bukti/.
-    pass
+    # Implementasi Mutex (Mutual Exclusion)
+    with lock:
+        # Jika Anda ingin mengambil screenshot untuk Langkah 1 (tanpa lock), 
+        # hapus baris `with lock:` dan kurangi indentasi `processed_count += 1`
+        processed_count += 1
 
 
 def worker(order_ids: list) -> None:
