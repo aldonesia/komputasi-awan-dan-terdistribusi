@@ -1,9 +1,10 @@
 # Jurnal Proses — Tugas 3
 
 ## Percobaan tanpa Lock
-- Hasil `processed_count` yang didapat: ...
-- Kenapa bisa meleset (jelaskan mekanisme race condition dengan kata sendiri): ...
-
+Race condition dibuat untuk membaca counter sebelum `Barrier.wait()`.
+Setelah seluruh thread membaca nilai 0, semuanya menulis nilai 1. Hasil pengujian
+lokal 100 pesanan menunjukkan 100 worker selesai tetapi counter hanya 1;
+sebanyak 99 update hilang.
 ## Percobaan dengan Lock
 - Hasil `processed_count` setelah perbaikan: ...
 
