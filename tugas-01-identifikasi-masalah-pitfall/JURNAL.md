@@ -2,10 +2,10 @@
 
 > Isi jurnal ini selama proses diskusi berlangsung, bukan ditulis ulang rapi di akhir. Tulis dengan gaya bebas — poin diskusi, kebuntuan, perubahan pikiran.
 
-## [Tanggal diskusi 1]
-- Peserta: [nama-nama yang hadir]
-- Poin diskusi: ...
-- Perbedaan pendapat (jika ada): ...
+## 18 September 2026
+- Peserta: Fathir Al Farih & Muhammad Kelvin Firmansyah
+- Poin diskusi: First meet serta analisis skenario dan soal Tugas 1 : mengkaji problem yang disajikan dalam persoalan skenario FoodGo, menggunakan AI dan research sederhana di web untuk mencari materi dan konteks untuk pengerjaan soal Tugas.
+- Perbedaan pendapat (jika ada): Perbedaan beberapa pitfall yang ingin di singgung dalam tugas.
 
 ## [Tanggal diskusi 2]
 - ...
