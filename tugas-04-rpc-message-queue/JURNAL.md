@@ -1,10 +1,16 @@
 # Jurnal Proses — Tugas 4
 
 ## Jalur yang dipilih
-- [RPC / MQ / keduanya], alasan: ...
+- RPC, alasan: RPC, karena hanya seperti memanggil local func biasa. Untuk Setup nya pun tidak sulit. tidak perlu menjalankan docker, install broker, dll
 
 ## Kendala teknis
-- Error saat setup (mis. koneksi RabbitMQ ditolak, port bentrok): ...
+- Error Connection Refused : Klien gagal terhubung karena server.pybelum dijalankan atau port di klien dan server lain.
+
+Solusi : Pastikan server.pysudah jalan duluan sebelum client.pydijalankan.
+
+- Error Port Sudah Digunakan : Server gagal jalan karena port 8000 lagi dipakai aplikasi lain.
+
+Solusi : Ganti port di server.pydan client.pyke port lain (misal: 8001), atau matikan aplikasi yang pakai port 8000.
 
 ## Uji "pesan tidak hilang" (khusus Jalur B)
 - Langkah uji: matikan consumer → jalankan publisher → nyalakan consumer
