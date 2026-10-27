@@ -29,26 +29,71 @@ class ChordRing:
         menjadi tanggung jawab node baru ini dari successor lamanya."""
         node_id = hash_id(node_name)
 
-        # TODO 1: tambahkan node_id -> node_ip ke self.nodes.
         # TODO 2: cari successor LAMA dari node_id ini (successor sebelum node
         # baru bergabung, gunakan find_successor() dengan node_id INI dikecualikan
         # dulu dari self.nodes saat mencari).
+        temp_nodes = dict(self.nodes)
+        if node_id in temp_nodes:
+            del temp_nodes[node_id]
+
+        old_successor = None
+        if temp_nodes:
+            sorted_temp = sorted(temp_nodes.keys())
+            old_successor = sorted_temp[0]
+            for n in sorted_temp:
+                if n >= node_id:
+                    old_successor = n
+                    break
+                
+        # TODO 1: tambahkan node_id -> node_ip ke self.nodes.
+        self.nodes[node_id] = node_ip
         # TODO 3: pindahkan semua key di self.data yang seharusnya menjadi
         # tanggung jawab node baru (key dengan hash <= node_id, tapi masih
         # dipegang oleh successor lama) ke bawah tanggung jawab node baru.
         # (Untuk simulasi sederhana, cukup print log siapa mengambil alih apa -
         # tidak perlu benar-benar memindahkan struktur data kompleks.)
-        print(f"[TODO] Node '{node_name}' (id={node_id}) bergabung, alamat {node_ip}")
+        migrated_keys = []
+        if old_successor is not None:
+            sorted_nodes = sorted(self.nodes.keys())
+            idx = sorted_nodes.index(node_id)
+            pred = sorted_nodes[idx - 1]  # Predecessor dari node baru di ring
+            
+            for k_hash, (kurir_id, ip_kurir) in list(self.data.items()):
+                is_responsible = False
+                if pred < node_id:
+                    if pred < k_hash <= node_id:
+                        is_responsible = True
+                else:  # Wrap-around case
+                    if k_hash > pred or k_hash <= node_id:
+                        is_responsible = True
+                
+                if is_responsible:
+                    migrated_keys.append((kurir_id, k_hash))
 
+        print(f"[JOIN] Node '{node_name}' (id={node_id}) bergabung, alamat {node_ip}. Mengambil alih key: {migrated_keys}")
+        
     def leave(self, node_name: str):
         """Keluarkan sebuah node dari ring. Data yang dipegangnya harus
         berpindah ke successor-nya."""
         node_id = hash_id(node_name)
 
-        # TODO 4: hapus node_id dari self.nodes.
         # TODO 5: cari successor BARU untuk tiap key yang tadinya dipegang
         # node ini, pindahkan ke successor tersebut.
-        print(f"[TODO] Node '{node_name}' (id={node_id}) keluar dari ring")
+        held_keys = []
+        for k_hash, val in self.data.items():
+            if self.find_successor(k_hash) == node_id:
+                held_keys.append((k_hash, val))
+        
+        # TODO 4: hapus node_id dari self.nodes.
+        del self.nodes[node_id]
+
+        transferred = []
+        if self.nodes:
+            for k_hash, (kurir_id, ip_kurir) in held_keys:
+                new_succ = self.find_successor(k_hash)
+                transferred.append((kurir_id, k_hash, new_succ))
+
+        print(f"[LEAVE] Node '{node_name}' (id={node_id}) keluar dari ring. Key yang ditransfer ke successor baru: {transferred}")
 
     def find_successor(self, key_hash: int) -> int:
         """Cari node_id dengan nilai hash TERKECIL yang >= key_hash
@@ -56,21 +101,35 @@ class ChordRing:
         ke node dengan hash terkecil di ring (karena ring melingkar)."""
         # TODO 6: implementasikan logika successor di atas menggunakan
         # self.nodes.keys(). Kembalikan node_id (bukan IP).
-        pass
+        if not self.nodes:
+            raise ValueError("Ring kosong, tidak ada node yang aktif.")
+        
+        sorted_nodes = sorted(self.nodes.keys())
+        for node_id in sorted_nodes:
+            if node_id >= key_hash:
+                return node_id
+        # Wrap-around ke node terkecil di ring
+        return sorted_nodes[0]
 
     def register_kurir(self, kurir_id: str, ip_kurir: str):
         """Simpan mapping ID Kurir -> IP di node yang bertanggung jawab."""
         key_hash = hash_id(kurir_id)
         # TODO 7: panggil find_successor(key_hash) untuk menentukan node
         # penanggung jawab, lalu simpan (kurir_id, ip_kurir) ke self.data[key_hash].
-        pass
+        responsible_node = self.find_successor(key_hash)
+        self.data[key_hash] = (kurir_id, ip_kurir)
 
     def lookup(self, kurir_id: str) -> str | None:
         """Cari alamat IP terkini untuk sebuah ID Kurir."""
         key_hash = hash_id(kurir_id)
         # TODO 8: gunakan find_successor(key_hash) untuk menemukan node
         # penanggung jawab, lalu kembalikan ip_kurir dari self.data jika ada.
-        pass
+        responsible_node = self.find_successor(key_hash)
+        print(f"  lookup({kurir_id}): hash={key_hash} -> node id={responsible_node}")
+        if key_hash in self.data:
+            _, ip_kurir = self.data[key_hash]
+            return ip_kurir
+        return None
 
 
 def main():
@@ -90,15 +149,16 @@ def main():
     print("\n--- Lookup sebelum perubahan topologi ---")
     print("kurir-001 ->", ring.lookup("kurir-001"))
     print("kurir-002 ->", ring.lookup("kurir-002"))
+    print("kurir-003 ->", ring.lookup("kurir-003"))
 
     print("\n--- Node baru bergabung ---")
-    ring.join("node-medan-1", "10.0.0.5")
+    ring.join("node-semarang-1", "10.0.0.5")   
     print("kurir-001 ->", ring.lookup("kurir-001"))
 
     print("\n--- Sebuah node keluar ---")
-    ring.leave("node-jakarta-1")
-    print("kurir-001 ->", ring.lookup("kurir-001"))
-    print("kurir-002 ->", ring.lookup("kurir-002"))
+    ring.leave("node-surabaya-1")
+    print("kurir-001 ->", ring.lookup("kurir-001"))        
+    print("kurir-003 ->", ring.lookup("kurir-003"))
 
 
 if __name__ == "__main__":
