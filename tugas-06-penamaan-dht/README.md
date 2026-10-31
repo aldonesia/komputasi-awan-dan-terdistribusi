@@ -26,9 +26,37 @@ python3 src/chord_simulation.py
 
 ## Tugas Analisis (`README.md`)
 
-1. Jelaskan **kenapa DHT/Chord** lebih cocok untuk kasus ini dibanding **flat naming sederhana** (mis. tabel pusat ID→IP) atau **DNS konvensional** — kaitkan dengan sifat "IP kurir sering berubah" dan kebutuhan tanpa titik gagal tunggal.
-2. Gambarkan (boleh pakai Mermaid, lihat Tugas 2) ring topology dari simulasi kalian, tandai node mana yang bertanggung jawab atas ID Kurir mana.
-3. Jelaskan apa yang terjadi pada mapping saat sebuah node **keluar** dari ring (siapa yang mengambil alih tanggung jawabnya) — dukung dengan output program.
+1. Jelaskan **kenapa DHT/Chord** lebih cocok untuk kasus ini dibanding **flat naming sederhana** (mis. tabel pusat ID→IP) atau **DNS konvensional** — kaitkan dengan sifat "IP kurir sering berubah" dan kebutuhan tanpa titik gagal tunggal.  
+Karena kurir FoodGo terus berpindah jaringan (misalnya dari Wi-Fi resto ke sinyal seluler), alamat IP mereka berubah sangat sering. Jika menggunakan tabel pusat (flat naming), rentetan update IP kurir yang masuk setiap menit akan memicu bottleneck dan mematikan server utama. Jika menggunakan DNS, pelanggan tidak bisa melacak posisi akurat karena sering kali diarahkan ke IP kurir yang sudah mati akibat cache DNS yang lambat diperbarui (TTL). Dengan DHT/Chord, setiap kali kurir berganti IP di jalan, alamat barunya langsung disimpan seketika (real-time) hanya pada node penanggung jawab spesifik di ring, memastikan pelanggan selalu menerima IP kurir yang terkini tanpa membebani dan membahayakan satu server pusat pun.
+
+2. Gambarkan (boleh pakai Mermaid, lihat Tugas 2) ring topology dari simulasi kalian, tandai node mana yang bertanggung jawab atas ID Kurir mana.  
+
+```mermaid
+flowchart LR
+    A["Bandung<br/>ID 40<br/>Kurir-002 (Hash 28)"]
+    B["Jakarta-2<br/>ID 102<br/>Kurir-001 (Hash 50)"]
+    C["Medan<br/>ID 123"]
+    D["Surabaya<br/>ID 136<br/>Kurir-003 (Hash 132)"]
+    E["Jakarta-1<br/>ID 177"]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> A
+```
+  
+3. Jelaskan apa yang terjadi pada mapping saat sebuah node **keluar** dari ring (siapa yang mengambil alih tanggung jawabnya) — dukung dengan output program.  
+Pada simulasi kita mengeluarkan node node-jakarta-1 dengan ID 177 dari ring. Sebelum node tersebut keluar, ring memiliki 5 node. Setelah node-jakarta-1 keluar, jumlah node menjadi 4. Sistem kemudian memperbarui topologi ring dan menentukan kembali node yang bertanggung jawab atas setiap mapping. Dari hash Kurir yang digunakan, tidak ada mapping yang sebelumnya menjadi tanggung jawab node Jakarta-1. Oleh karena itu, tidak terjadi perpindahan tanggung jawab mapping Kurir pada skenario ini, dapat dilihat dari output:  
+```
+--- Sebuah node keluar ---
+[LEAVE] Node 'node-jakarta-1' (id=177) keluar dari ring
+[LOOKUP] kurir-001 ditemukan di node 102
+kurir-001 -> 192.168.1.10
+[LOOKUP] kurir-002 ditemukan di node 40
+kurir-002 -> 192.168.1.11
+PS C:\Kuliah\Sistem Terdist
+```  
 
 ## Struktur Submission
 

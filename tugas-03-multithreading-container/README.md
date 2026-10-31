@@ -66,3 +66,11 @@ Kebijakan **Level 2 (AI Assisted Idea Generation & Structuring)** berlaku — li
 
 - Bagian `# TODO` di `order_simulator.py` dan `Dockerfile` sengaja dikosongkan — solusi yang identik persis antar kelompok (termasuk nama variabel, komentar) akan diperiksa lebih lanjut.
 - `JURNAL.md` wajib menunjukkan bukti nyata percobaan **sebelum** (race condition muncul) dan **sesudah** (`Lock()` dipasang) — bukan cuma klaim tanpa data pembanding.
+
+## Analisis Projek (Race condition, Maintenance, Threading)
+
+- Race condition, Beberapa thread memproses pesanan secara bersamaan dan mengakses proccesed_count yang sama. thread membaca nilai, menambahkannya, lalu menulis hasilnya kembali. Jika beberapa thread membaca nilai yang sama sebelum ada yang menulis, pembaruan mereka bisa saling menimpa.
+
+- Maintenance, Disini dengan adanya lock memastikan hanya satu thread pada satu waktu yang menjalankan bagian pembaruan processed_count. Thread lain harus menunggu sampai kunci dilepas, sehingga setiap kenaikan tercatat dan tidak tertimpa.
+
+- Threading, Thread berbagi ruang memori yang sama, jadi penghitung dapat diakses bersama. Lock melindungi pembaruannya agar hasilnya tetap akurat. Multiprocessing menjalankan proses terpisah dengan ruang memori masing-masing. Untuk berbagi penghitung, diperlukan mekanisme tambahan seperti memori bersama atau komunikasi antarproses, yang lebih kompleks untuk simulasi ini.

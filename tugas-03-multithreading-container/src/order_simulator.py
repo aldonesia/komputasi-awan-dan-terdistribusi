@@ -17,7 +17,7 @@ NUM_WORKERS = 10        # jumlah thread pekerja
 processed_count = 0
 
 # TODO 1: Buat objek Lock di sini untuk melindungi `processed_count`.
-# lock = threading.Lock()
+lock = threading.Lock()
 
 
 def process_order(order_id: int) -> None:
@@ -25,7 +25,6 @@ def process_order(order_id: int) -> None:
     global processed_count
 
     # Simulasikan kerja nyata (mis. validasi, hitung total harga)
-    time.sleep(random.uniform(0.001, 0.01))
 
     # TODO 2: Tambahkan increment `processed_count` DI SINI.
     # Langkah 1: jalankan dulu tanpa lock (increment biasa: processed_count += 1)
@@ -33,7 +32,18 @@ def process_order(order_id: int) -> None:
     # Langkah 2: bungkus increment dengan `with lock:` dan buktikan hasilnya
     #            selalu tepat NUM_ORDERS. Simpan bukti kedua kondisi ini
     #            di JURNAL.md / folder bukti/.
-    pass
+    
+    # CONDITION 1: WITHOUT LOCK - Race Condition
+    # temp = processed_count
+    # time.sleep(random.uniform(0.001, 0.01))
+    # processed_count = temp + 1
+    
+    # CONDITION 2: WITH LOCK - Race Condition Prevented
+    time.sleep(random.uniform(0.001, 0.01))
+    
+    with lock:
+       temp = processed_count
+       processed_count = temp + 1
 
 
 def worker(order_ids: list) -> None:
@@ -50,6 +60,15 @@ def main() -> None:
     # start semua thread, lalu join semua thread sebelum lanjut.
     threads = []
     # ... isi logika pembagian tugas & pembuatan thread di sini ...
+    chunk_size = (NUM_ORDERS + NUM_WORKERS - 1) // NUM_WORKERS
+    for i in range(NUM_WORKERS):
+        start = i * chunk_size
+        end = min(start + chunk_size, NUM_ORDERS)
+        if start < end:
+            chunk = order_ids[start:end]
+            t = threading.Thread(target=worker, args=(chunk,))
+            threads.append(t)
+            t.start()
 
     for t in threads:
         t.join()

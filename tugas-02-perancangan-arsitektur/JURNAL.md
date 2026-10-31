@@ -1,14 +1,21 @@
 # Jurnal Proses — Tugas 2
 
-## [Tanggal]
-- Opsi arsitektur yang dipertimbangkan: ...
-- Kenapa akhirnya pilih [SOA/Pub-Sub]: ...
-- Revisi diagram (versi 1 → versi 2, apa yang berubah dan kenapa): ...
+## 20/10/2026
+
+- Opsi arsitektur yang dipertimbangkan:
+<div align="justify">Jadi kami ada pertimbangan yaitu SOA karena FoodGo memiliki beberapa fungsi utama yaitu Pesanan, Pembayaran, Katalog, Resto, dan Kurir/Notifikasi yang tanggung jawab dan juga kebutuhan perubahannya berbeda. SOA memisahkan fungsi-fungsi tersebut menjadi layanan dengan tugas dan kontrak komunikasi yang jelas. Pemisahan ini dapat membantu tim mengembangkan, memelihara, dan merilis perubahan pada layanan masing-masing tanpa selalu mengubah seluruh aplikasi. Kapasitas layanan juga dapat disesuaikan dengan kebutuhannya, misalnya layanan Pesanan dapat ditingkatkan ketika trafik pemesanan melonjak tanpa harus meningkatkan semua modul sekaligus.</div>
+<br>
+- Kenapa akhirnya pilih [SOA/Pub-Sub]:
+<div align="justify">Kami akhirnya memilih Hybrid karena FoodGo membutuhkan pemisahan layanan sekaligus komunikasi yang sesuai dengan jenis prosesnya. SOA menjadi arsitektur utama untuk membagi Pesanan, Pembayaran, Katalog, Resto, dan Kurir/Notifikasi berdasarkan tanggung jawab yang jelas. Pub-Sub digunakan sebagai pola komunikasi asinkron ketika layanan tidak perlu menunggu hasil langsung, seperti menyebarkan informasi pembayaran berhasil ke layanan Resto dan Kurir/Notifikasi melalui message broker. Sementara itu, komunikasi sinkron tetap digunakan untuk proses yang membutuhkan jawaban segera, seperti validasi menu oleh Katalog. Dibanding hanya menggunakan SOA dengan pemanggilan langsung, Pub-Sub mengurangi ketergantungan antar layanan pada alur event.</div>
+<br>
+- Revisi diagram (versi 1 → versi 2, apa yang berubah dan kenapa):
+<div align="justify"> Pada versi 1 sebelumnya alur komunikasi yang kamii buat masih terlalu sederhana dan belum jelas jenis komunikasinya. Pada versi 2 kami menambahkan API Gateway, memberi label komunikasi sinkron dan asinkron, serta menambahkan Message Broker agar terlihat bahwa pembayaran, resto, dan kurir berkomunikasi dengan pola Pub-Sub. Perubahan ini dilakukan agar pembagian SOA dan Pub-Sub dan juga alur pesanan lebih mudah dipahami.</div>
 
 ## Log Penggunaan AI (Level 2)
 
 > Wajib diisi sesuai kebijakan Level 2 di [`../RUBRIK-UMUM.md`](../RUBRIK-UMUM.md). Tulis "Tidak memakai AI" pada baris pertama jika memang tidak dipakai. Hanya untuk brainstorming ide/outline — bukan untuk kode/analisis/teks akhir.
 
-| Tanggal | Tool AI | Prompt yang diberikan | Ringkasan saran/ide AI | Bagaimana diolah jadi tulisan/kode sendiri |
-|---|---|---|---|---|
-| ... | ... | ... | ... | ... |
+| Tanggal    | Tool AI   | Prompt yang diberikan                                                       | Ringkasan saran/ide AI                                                                                                                                                                                                                                                                           | Bagaimana diolah jadi tulisan/kode sendiri                                                                                                                                                                                                   |
+| ---------- | --------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 20/10/2026 | Google AI | perbedaan antara Service-Oriented Architecture (SOA) atau Publish-Subscribe | SOA adalah sebuah payung filosofi/gaya arsitektur besar untuk mengintegrasikan layanan bisnis, sedangkan Pub/Sub adalah pola komunikasi spesifik (messaging pattern) yang sering kali digunakan di dalam arsitektur terdistribusi seperti SOA itu sendiri untuk mengirimkan data secara asinkron | Setelah mengetahui hal - hal tersebut kami mendapatkan perkembangan bahwa sebenarnya SOA bisa di hybrid karena pemikiran kami sebelumnya mereka adalah 2 hal metode yang berbeda dan tidak bisa saling melengkapi (Jalan sendiri - sendiri). |
+| 20/10/2026 | Google AI | Perbedaan sinkron dan asinkron                                              | Sinkron berarti pengirim mengirim permintaan lalu menunggu jawaban sebelum melanjutkan. Asinkron berarti pengirim tidak menunggu proses penerima selesai. Pesan dikirim, lalu penerima memprosesnya belakangan.                                                                                  | Dapat melakukan perkembangan terhadap diagram yang dimuat                                                                                                                                                                                    |
