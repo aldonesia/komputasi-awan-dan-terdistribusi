@@ -1,38 +1,37 @@
-"""
-Tugas 4 - Jalur B: Publisher (simulasi modul Pembayaran)
-Pastikan `docker compose up -d` sudah jalan sebelum menjalankan file ini.
-"""
-
 import pika
 import json
-import time
-
-QUEUE_NAME = "pembayaran_berhasil"
-
+import datetime
 
 def main():
-    # TODO 1: buat koneksi ke RabbitMQ di localhost (pika.BlockingConnection
-    # dengan ConnectionParameters(host="localhost")), lalu buat channel.
-    connection = None
-    channel = None
-
-    # TODO 2: deklarasikan queue dengan nama QUEUE_NAME (channel.queue_declare),
-    # gunakan durable=True supaya pesan tidak hilang walau RabbitMQ restart.
-
-    for i in range(1, 4):
-        pesan = {
-            "user_id": f"user{i}",
-            "jumlah": 20000 * i,
-            "timestamp": time.time(),
-        }
-        # TODO 3: publish `pesan` (di-encode json) ke QUEUE_NAME memakai
-        # channel.basic_publish(...). Cetak log "Event terkirim: ..." setiap publish.
-        print(f"[TODO] Event belum benar-benar terkirim: {pesan}")
-        time.sleep(1)
-
-    # TODO 4: tutup koneksi (connection.close()) setelah selesai.
-    print("Publisher selesai mengirim event.")
-
+    # Koneksi ke RabbitMQ lokal
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+    
+    # Deklarasikan antrean (queue) yang tahan lama (durable)
+    channel.queue_declare(queue='notifikasi_kurir', durable=True)
+    
+    payload = {
+        "order_id": "ORD-998877",
+        "user_id": "user_123",
+        "item": "Nasi Goreng Spesial",
+        "status": "pembayaran_berhasil",
+        "timestamp": str(datetime.datetime.now())
+    }
+    
+    message = json.dumps(payload)
+    
+    # Kirim pesan ke antrean tanpa menunggu consumer aktif
+    channel.basic_publish(
+        exchange='',
+        routing_key='notifikasi_kurir',
+        body=message,
+        properties=pika.BasicProperties(
+            delivery_mode=2, # Membuat pesan persistent (tersimpan walau broker restart)
+        )
+    )
+    
+    print(f"[PUBLISHER] Event pembayaran berhasil dikirim ke antrean: {message}")
+    connection.close()
 
 if __name__ == "__main__":
     main()
