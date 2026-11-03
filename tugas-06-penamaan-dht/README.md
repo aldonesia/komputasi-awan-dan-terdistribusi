@@ -59,6 +59,19 @@ Alasan penggunaan Chord DHT pada FoodGo:
 - Perubahan jumlah node dapat ditangani melalui mekanisme join dan leave.
 - Dengan karakteristik tersebut, Chord DHT dapat menjadi pendekatan yang sesuai untuk kebutuhan penamaan terdistribusi pada FoodGo.
 
+2. Ring Topology
+  ```mermaid
+graph TD
+    N40((Node 40<br>bandung-1)) --> N102((Node 102<br>jakarta-2))
+    N102 --> N123((Node 123<br>medan-1))
+    N123 --> N136((Node 136<br>surabaya-1))
+    N136 --> N177((Node 177<br>jakarta-1))
+    N177 --> N40
+    
+    K28[kurir-002<br>Hash: 28] -.->|Disimpan di| N40
+    K50[kurir-001<br>Hash: 50] -.->|Disimpan di| N102
+    K132[kurir-003<br>Hash: 132] -.->|Disimpan di| N136
+
 ## Struktur Submission
 
 ```
