@@ -1,63 +1,53 @@
-# Tugas 5 (Pekan 5) — Koordinasi & Konsensus
+# Tugas 5 — Koordinasi & Konsensus: Bully Algorithm (FoodGo)
 
-**Materi terkait:** Physical/Logical Clock, Election Algorithm (Bully/Raft).
+Simulasi pemilihan leader dengan Bully Algorithm: 5 proses Python (`src/node.py`), masing-masing satu node di port 5001–5005, komunikasi lewat TCP socket di `localhost`.
 
-## Studi Kasus
+## Cara menjalankan
 
-Terjadi konflik urutan waktu pada pesanan FoodGo (dua server mencatat urutan pesanan berbeda karena jam tidak sinkron), dan sistem membutuhkan satu **"Node Leader"** untuk mengelola antrean pesanan pusat agar tidak terjadi konflik pemrosesan ganda.
+Buka 5 terminal, jalankan dari folder `tugas-05-koordinasi-konsensus/`:
 
-## Tugas Kelompok
-
-Implementasikan simulasi **Bully Algorithm** untuk memilih leader di antara **5 node virtual** yang berjalan sebagai 5 proses Python terpisah di laptop yang sama (tiap node = satu proses di port berbeda, komunikasi lewat TCP socket di `localhost`).
-
-Skeleton yang disediakan (`src/node.py`) sudah menangani bagian **infrastruktur jaringan** (membuka socket, menerima & mengirim pesan antar node) — bagian **algoritma Bully sendiri sengaja dikosongkan** (`# TODO`), karena itu inti pembelajaran tugas ini.
-
-### Aturan Bully Algorithm yang harus diimplementasikan
-
-1. Node yang mendeteksi leader tidak merespons (atau saat start pertama kali) mengirim pesan `ELECTION` ke semua node dengan ID **lebih besar** darinya.
-2. Jika ada node ber-ID lebih besar yang merespons `OK`, node yang memulai election **berhenti mencalonkan diri** dan menunggu pesan `COORDINATOR`.
-3. Jika **tidak ada** node ber-ID lebih besar yang merespons dalam batas waktu tertentu, node tersebut menjadi leader dan mem-broadcast `COORDINATOR` ke semua node lain.
-4. Semua node mencatat siapa leader saat ini.
-
-### Cara Menjalankan
-
-Buka 5 terminal terpisah (satu per node):
 ```bash
-python3 src/node.py --id 1 --port 5001 --peers 5002,5003,5004,5005
-python3 src/node.py --id 2 --port 5002 --peers 5001,5003,5004,5005
-python3 src/node.py --id 3 --port 5003 --peers 5001,5002,5004,5005
-python3 src/node.py --id 4 --port 5004 --peers 5001,5002,5003,5005
-python3 src/node.py --id 5 --port 5005 --peers 5001,5002,5003,5004
+python3 -u src/node.py --id 1 --port 5001 --peers 5002,5003,5004,5005 | tee bukti/log_node1.txt
+python3 -u src/node.py --id 2 --port 5002 --peers 5001,5003,5004,5005 | tee bukti/log_node2.txt
+python3 -u src/node.py --id 3 --port 5003 --peers 5001,5002,5004,5005 | tee bukti/log_node3.txt
+python3 -u src/node.py --id 4 --port 5004 --peers 5001,5002,5003,5005 | tee bukti/log_node4.txt
+python3 -u src/node.py --id 5 --port 5005 --peers 5001,5002,5003,5004 | tee bukti/log_node5.txt
 ```
 
-### Skenario Wajib Diuji & Dicatat
+## 1. Kenapa FoodGo butuh satu leader?
 
-1. **Start normal**: nyalakan node 1–5 hampir bersamaan, catat siapa yang terpilih jadi leader (harusnya node ber-ID tertinggi, yaitu node 5).
-2. **Leader mati**: matikan (Ctrl+C) proses node leader (node 5), amati node lain mendeteksi leader hilang dan memicu election baru. Catat leader baru yang terpilih (harusnya node 4).
-3. Simpan log terminal (screenshot atau `> log_nodeX.txt` redirect) dari kedua skenario ke folder `bukti/`.
+Di FoodGo, dua server mencatat urutan pesanan yang berbeda karena jam keduanya tidak sinkron. Kalau semua server boleh memutuskan urutan antrean sendiri-sendiri, pesanan yang sama bisa diproses dua kali atau diurutkan berbeda. Dengan satu **Node Leader** yang memegang antrean pusat, urutan pesanan ditentukan di satu tempat saja, jadi tidak ada konflik pemrosesan ganda. Server lain cukup meneruskan pesanan ke leader.
 
-## Struktur Submission
+## 2. Cara kerja implementasi
 
-```
-tugas-05-koordinasi-konsensus/
-├── README.md      # Analisis: kenapa perlu leader, kenapa Bully (vs Raft), hasil 2 skenario
-├── JURNAL.md
-├── src/
-│   └── node.py
-└── bukti/          # Log/screenshot skenario start normal & leader mati
-```
+- `ELECTION` dikirim ke semua node ber-ID lebih besar.
+- Node yang menerima `ELECTION` dari ID lebih kecil membalas `OK`, lalu ikut menjalankan election sendiri.
+- Kalau dalam 2 detik tidak ada `OK`, node menyatakan diri leader dan broadcast `COORDINATOR` ke semua node.
+- Kalau ada `OK`, node berhenti mencalonkan diri dan menunggu `COORDINATOR`.
+- `monitor_leader` mengirim `PING` ke leader tiap 3 detik. Kalau gagal connect, leader dianggap mati dan election dimulai lagi.
 
-## Rubrik Penilaian (Tugas 5)
+## 3. Kenapa selalu node ber-ID tertinggi yang masih hidup?
 
-| Komponen | Bobot | Kriteria |
-|---|---|---|
-| Implementasi Bully Algorithm benar | 35% | Election, OK, COORDINATOR message bekerja sesuai aturan algoritma |
-| Bukti skenario leader mati → re-election | 30% | Log jelas menunjukkan leader baru terpilih otomatis |
-| Analisis (kenapa perlu leader, trade-off Bully vs Raft) | 20% | Dikaitkan ke masalah urutan pesanan di skenario FoodGo |
-| Proses & kontribusi kelompok | 15% | `JURNAL.md`, commit history |
+Setiap node hanya berhenti mencalonkan diri kalau ada node yang lebih besar menjawab `OK`. Jadi satu-satunya node yang tidak pernah menerima `OK` adalah node dengan ID terbesar di antara yang hidup — node itu pasti menang. Node yang lebih kecil selalu "kalah" (di-*bully*) selama ada yang lebih besar dan hidup.
 
-## Batasan Penggunaan AI (Level 2)
+## 4. Hasil skenario
 
-Kebijakan **Level 2 (AI Assisted Idea Generation & Structuring)** berlaku — lihat [`../RUBRIK-UMUM.md`](../RUBRIK-UMUM.md). Boleh bertanya ke AI tentang gambaran umum algoritma election; **tidak boleh** meminta AI menuliskan isi `# TODO` di `src/node.py` (logika `on_message`, `start_election`, `declare_leader`, `monitor_leader`). Catat pemakaian AI di "Log Penggunaan AI" pada `JURNAL.md`.
+### Skenario 1 — Start normal
+Node 1–5 dinyalakan hampir bersamaan. Node 5 tidak menerima `OK` dari siapa pun, lalu broadcast `COORDINATOR`. Semua node mencatat **leader = node 5**.
 
-- `README.md` wajib menjelaskan kenapa Bully Algorithm selalu memilih node ber-ID tertinggi yang masih hidup, dan apa kelemahannya dibanding algoritma lain (mis. jumlah pesan yang dikirim saat election, single point of failure sebelum leader baru terpilih) — bukan sekadar definisi generik.
+![Menjalankan 5 node di 5 terminal](bukti/Menjalankan%205%20node%20di%205%20terminal.png)
+![kelima node berjalan dan Node 5 menjadi leader](bukti/kelima%20node%20berjalan%20dan%20Node%205%20menjadi%20leader.png)
+
+### Skenario 2 — Leader mati
+Node 5 dimatikan dengan Ctrl+C. Dalam ≤3 detik node lain gagal mem-`PING` node 5 dan memulai election. Node 4 tidak menerima `OK` (node 5 mati), lalu broadcast `COORDINATOR`. Pesan ke node 5 gagal terkirim, dan semua node hidup mencatat **leader = node 4**.
+
+![setelah Node 5 dihentikan, Node 4 menjadi leader](bukti/setelah%20Node%205%20dihentikan,%20Node%204%20menjadi%20leader.png)
+
+## 5. Kelemahan Bully dibanding algoritma lain 
+
+- **Jumlah pesan banyak.** Satu node ber-ID rendah yang memulai election mengirim `ELECTION` ke semua node di atasnya, dan masing-masing membalas lalu memulai election sendiri. Kasus terburuk (node 1 yang mendeteksi) menghasilkan pesan O(n²). Di log skenario 2 terlihat node 1, 2, 3 semuanya ikut kirim `ELECTION`, padahal hasilnya tetap node 4. Raft memakai voting dengan jumlah pesan jauh lebih sedikit.
+- **Tidak ada leader selama election.** Dari leader mati sampai `COORDINATOR` baru diterima, ada jeda (deteksi ≤3 detik + timeout 2 detik). Untuk FoodGo, di jeda ini antrean pusat tidak punya pemilik: pesanan masuk bisa tertahan atau salah rute. Leader adalah single point of failure sampai leader baru terpilih.
+- **Node tinggi yang restart langsung merebut leader**, walaupun leader sekarang sehat. Itu bisa memutus antrean yang sedang diproses. Raft hanya mengganti leader lewat term baru dan suara mayoritas.
+- **Mengandalkan timeout dan asumsi jaringan andal.** Kalau jaringan terpisah (partition), kedua sisi bisa sama-sama punya leader (split-brain), karena Bully tidak butuh mayoritas. Raft butuh suara mayoritas, jadi aman dari masalah ini.
+
+**Kelebihan Bully:** sederhana, mudah dipahami dan diimplementasikan, cocok untuk simulasi kecil seperti ini.
