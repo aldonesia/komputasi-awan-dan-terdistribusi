@@ -30,6 +30,35 @@ python3 src/chord_simulation.py
 2. Gambarkan (boleh pakai Mermaid, lihat Tugas 2) ring topology dari simulasi kalian, tandai node mana yang bertanggung jawab atas ID Kurir mana.
 3. Jelaskan apa yang terjadi pada mapping saat sebuah node **keluar** dari ring (siapa yang mengambil alih tanggung jawabnya) — dukung dengan output program.
 
+## Jawab Tugas Analisis
+1. Perbandingan DHT/Chord dengan Metode Penamaan Lain
+
+Pada studi kasus FoodGo, sistem perlu menemukan alamat IP kurir berdasarkan ID Kurir yang bersifat tetap. Permasalahan muncul karena alamat IP kurir dapat berubah ketika kurir berpindah lokasi atau jaringan. Oleh karena itu, diperlukan mekanisme penamaan yang dapat menghubungkan ID Kurir dengan alamat IP terbaru.
+
+Terdapat beberapa pendekatan yang dapat digunakan:
+
+A. Flat Naming
+
+Flat naming menggunakan tabel pusat untuk menyimpan hubungan antara ID Kurir dan alamat IP. Pendekatan ini cukup sederhana, tetapi memiliki ketergantungan pada satu server pusat. Apabila server mengalami gangguan, proses pencarian alamat IP dapat ikut terganggu. Selain itu, server pusat berpotensi menjadi bottleneck ketika jumlah permintaan meningkat.
+
+B. DNS Konvensional
+
+DNS (Domain Name System) digunakan untuk menerjemahkan nama domain menjadi alamat IP. DNS memiliki mekanisme caching dan redundansi untuk meningkatkan ketersediaan layanan. Namun, DNS menggunakan struktur hierarkis dan tidak secara langsung menerapkan pembagian tanggung jawab penyimpanan key seperti pada Chord DHT.
+
+C. Distributed Hash Table (DHT) / Chord
+
+DHT merupakan mekanisme penyimpanan data terdistribusi yang memungkinkan beberapa node berbagi tanggung jawab dalam menyimpan dan menemukan data. Pada algoritma Chord, consistent hashing digunakan untuk menentukan posisi ID node dan ID Kurir dalam ruang identifier yang sama.
+
+Setiap mapping ID Kurir akan ditempatkan pada node yang menjadi successor dari hash ID Kurir tersebut. Ketika terdapat node baru yang bergabung atau node keluar, pembagian tanggung jawab penyimpanan dapat disesuaikan berdasarkan posisi node pada ring.
+
+Alasan penggunaan Chord DHT pada FoodGo:
+
+- Tidak bergantung pada satu server pusat untuk melakukan pencarian data.
+- Mapping ID Kurir dapat diperbarui ketika alamat IP kurir berubah.
+- Penyimpanan data didistribusikan ke beberapa node.
+- Perubahan jumlah node dapat ditangani melalui mekanisme join dan leave.
+- Dengan karakteristik tersebut, Chord DHT dapat menjadi pendekatan yang sesuai untuk kebutuhan penamaan terdistribusi pada FoodGo.
+
 ## Struktur Submission
 
 ```
