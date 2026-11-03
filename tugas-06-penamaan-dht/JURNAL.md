@@ -22,4 +22,5 @@
 
 | Tanggal | Tool AI | Prompt yang diberikan | Ringkasan saran/ide AI | Bagaimana diolah jadi tulisan/kode sendiri |
 |---|---|---|---|---|
+| 3 November 2026 | ChatGPT | Bagaimana konsep DHT menggunakan algoritma Chord pada studi kasus FoodGo? | AI Memberikan gambaran tentang consistent hashing, ring topology, dan successor. | Mempelajari konsep tersebut sebagai dasar memahami simulasi Chord. |
 | ... | ... | ... | ... | ... |
