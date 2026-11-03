@@ -17,7 +17,10 @@ NUM_WORKERS = 10        # jumlah thread pekerja
 processed_count = 0
 
 # TODO 1: Buat objek Lock di sini untuk melindungi `processed_count`.
-# lock = threading.Lock()
+lock = threading.Lock()
+
+# Diubah oleh main hanya ketika seluruh thread percobaan sebelumnya selesai.
+use_lock = False
 
 
 def process_order(order_id: int) -> None:
@@ -33,7 +36,18 @@ def process_order(order_id: int) -> None:
     # Langkah 2: bungkus increment dengan `with lock:` dan buktikan hasilnya
     #            selalu tepat NUM_ORDERS. Simpan bukti kedua kondisi ini
     #            di JURNAL.md / folder bukti/.
-    pass
+    if use_lock:
+        with lock:
+            current_count = processed_count
+            time.sleep(0.001)
+            processed_count = current_count + 1
+    else:
+        # Sengaja pisahkan baca dan tulis agar lost update dapat terlihat.
+        # Jeda di antara keduanya memberi kesempatan thread lain membaca
+        # nilai yang sama. Jeda I/O di atas saja tidak membuat celah ini.
+        current_count = processed_count
+        time.sleep(0.001)
+        processed_count = current_count + 1
 
 
 def worker(order_ids: list) -> None:
@@ -43,20 +57,38 @@ def worker(order_ids: list) -> None:
 
 
 def main() -> None:
+    global processed_count, use_lock
     order_ids = list(range(1, NUM_ORDERS + 1))
 
     # TODO 3: Bagi `order_ids` menjadi NUM_WORKERS bagian, buat satu
     # threading.Thread per bagian yang menjalankan `worker(...)`,
     # start semua thread, lalu join semua thread sebelum lanjut.
-    threads = []
-    # ... isi logika pembagian tugas & pembuatan thread di sini ...
+    for mode in (False, True):
+        use_lock = mode
+        processed_count = 0
+        threads = []
 
-    for t in threads:
-        t.join()
+        print(f"\n=== {'DENGAN LOCK' if use_lock else 'TANPA LOCK'} ===")
+        print(f"Jumlah pesanan: {NUM_ORDERS}; jumlah worker: {NUM_WORKERS}")
 
-    print(f"Total pesanan diproses: {processed_count} (seharusnya {NUM_ORDERS})")
-    if processed_count != NUM_ORDERS:
-        print("RACE CONDITION TERDETEKSI - lengkapi TODO 1 & TODO 2 dengan Lock!")
+        for worker_index in range(NUM_WORKERS):
+            # Round-robin: worker 0 mendapat ID 1, 11, 21, ..., 91.
+            assigned_orders = order_ids[worker_index::NUM_WORKERS]
+            thread = threading.Thread(target=worker, args=(assigned_orders,))
+            threads.append(thread)
+
+        # Start semua worker sebelum join, bukan start-join satu per satu.
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        print(f"Total pesanan diproses: {processed_count} (seharusnya {NUM_ORDERS})")
+        print(f"Update counter yang hilang: {NUM_ORDERS - processed_count}")
+        if processed_count != NUM_ORDERS:
+            print("RACE CONDITION TERDETEKSI - counter tidak sesuai!")
+        else:
+            print("Counter sesuai jumlah pesanan.")
 
 
 if __name__ == "__main__":
