@@ -6,15 +6,15 @@
 
 ## Skenario join/leave
 - Hasil sebelum & sesudah node baru bergabung: 
-- Sebelum: terdapat empat node dalam ring dengan ID 40, 102, 136, dan 177.
-- Sesudah: node node-medan-1 dengan ID 123 berhasil bergabung sehingga terdapat lima node.
-- Hasil lookup: alamat IP kurir tetap dapat ditemukan, yaitu 192.168.1.10 untuk kurir-001.
+Sebelum: terdapat empat node dalam ring dengan ID 40, 102, 136, dan 177.
+Sesudah: node node-medan-1 dengan ID 123 berhasil bergabung sehingga terdapat lima node.
+Hasil lookup: alamat IP kurir tetap dapat ditemukan, yaitu 192.168.1.10 untuk kurir-001.
 
 - Hasil sebelum & sesudah node keluar:
-- Sebelum: terdapat lima node dalam ring.
-- Sesudah: node node-jakarta-1 dengan ID 177 keluar sehingga tersisa empat node.
-- Hasil lookup: kurir-001 dan kurir-002 masih dapat ditemukan menggunakan alamat IP yang sama.
-- Catatan: mekanisme pengalihan data masih perlu diperbaiki karena program belum memvalidasi kepemilikan data sebelum node keluar.
+Sebelum: terdapat lima node dalam ring.
+Sesudah: node node-jakarta-1 dengan ID 177 keluar sehingga tersisa empat node.
+Hasil lookup: kurir-001 dan kurir-002 masih dapat ditemukan menggunakan alamat IP yang sama.
+Catatan: mekanisme pengalihan data masih perlu diperbaiki karena program belum memvalidasi kepemilikan data sebelum node keluar.
 
 ## Log Penggunaan AI (Level 2)
 
