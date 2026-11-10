@@ -106,30 +106,73 @@ class ReplicationSystem:
         replica = self._pilih(server)
         return replica.read(user_id)
 
-    def baca_saldo_read_your_writes(self, user_id: str, server: str, versi_minimal: int) -> float:
+    def baca_saldo_read_your_writes(self, user_id: str, server: str, versi_minimal: int, mode: str="poll", max_wait: float = RYW_MAX_WAIT) -> float:
         """TODO 2: implementasikan Read-Your-Writes -
         jika replika yang dituju versi datanya < versi_minimal (client pernah
         melihat versi lebih baru sebelumnya), tunggu/redirect ke replika yang
         sudah punya versi tersebut (di sini cukup simulasikan dengan polling
         sampai versi replika >= versi_minimal, atau redirect ke Jakarta)."""
         pass
+        replica = self._pilih(server)
 
+        # Replika sudah cukup baru -> langsung baca (kasus paling umum, tanpa overhead)
+        saldo, versi = replica.snapshot(user_id)
+        if versi >= versi_minimal:
+            log(f"[RYW] {server} sudah punya versi {versi} (>= {versi_minimal}), baca langsung")
+            return saldo
+
+        # Replika tertinggal
+        if mode == "redirect":
+            log(f"[RYW] {server} baru versi {versi} < {versi_minimal}, redirect ke Jakarta")
+            return self.jakarta.snapshot(user_id)[0]
+
+        log(f"[RYW] {server} baru versi {versi} < {versi_minimal}, menunggu replikasi...")
+        deadline = time.monotonic() + max_wait
+        while time.monotonic() < deadline:
+            time.sleep(RYW_POLL_INTERVAL)
+            saldo, versi = replica.snapshot(user_id)  # snapshot atomik: saldo & versi konsisten
+            if versi >= versi_minimal:
+                log(f"[RYW] {server} sudah mencapai versi {versi}, baca dari {server}")
+                return saldo
+
+        # Timeout -> fallback ke primary agar tetap benar
+        log(f"[RYW] timeout {max_wait}s menunggu {server}, fallback redirect ke Jakarta")
+        return self.jakarta.snapshot(user_id)[0]
 
 def main():
     system = ReplicationSystem()
     user_id = "user1"
 
-    print("=== Skenario NAIF (tanpa Read-Your-Writes) ===")
-    system.top_up(user_id, 50000)
-    time.sleep(0.5)  # pelanggan langsung pesan makanan < REPLICATION_DELAY detik kemudian
-    print("Baca saldo dari Bandung (naif):", system.baca_saldo_naif(user_id, "Bandung"))
-    print("-> Harusnya 50000, tapi karena delay replikasi, hasilnya bisa 0 (BUG)")
-
-    time.sleep(REPLICATION_DELAY + 0.5)
-
     print("\n=== Skenario dengan Read-Your-Writes ===")
-    system.top_up(user_id, 20000)
-    versi_terakhir = system.version_counter
+    versi_terakhir = system.top_up(user_id, 20000)  # token RYW = versi penulisan ini
+    # Dipanggil segera setelah top_up (< REPLICATION_DELAY), mode poll:
+    saldo = system.baca_saldo_read_your_writes(user_id, "Bandung", versi_terakhir)
+    print("Baca saldo dari Bandung (RYW, poll):", saldo)
+    assert saldo == 70000, "RYW gagal: saldo tidak sesuai"
+    print("-> Benar: 70000 (50000 + 20000), walau dibaca segera setelah top-up")
+
+    print("\n=== Read-Your-Writes mode redirect ===")
+    versi_terakhir = system.top_up(user_id, 10000)
+    saldo = system.baca_saldo_read_your_writes(
+        user_id, "Bandung", versi_terakhir, mode="redirect"
+    )
+    print("Baca saldo dari Bandung (RYW, redirect):", saldo)
+    assert saldo == 80000
+    print("-> Benar: 80000, langsung dibaca dari Jakarta tanpa menunggu")
+
+    print("\n=== Read-Your-Writes: poll timeout lalu fallback ke Jakarta ===")
+    versi_terakhir = system.top_up(user_id, 5000)
+    saldo = system.baca_saldo_read_your_writes(
+        user_id, "Bandung", versi_terakhir, mode="poll", max_wait=0.5
+    )
+    print("Baca saldo dari Bandung (RYW, fallback):", saldo)
+    assert saldo == 85000
+    print("-> Benar: 85000, walau max_wait lebih pendek dari delay replikasi")
+
+    system.wait_replication()  # tunggu semua replikasi selesai sebelum program berakhir
+    print("\nSetelah semua replikasi selesai:")
+    print("  Jakarta:", system.jakarta.read(user_id))
+    print("  Bandung:", system.bandung.read(user_id))
     # TODO 3: panggil baca_saldo_read_your_writes dan tunjukkan hasilnya SELALU benar
     # walau dipanggil segera setelah top_up (< REPLICATION_DELAY detik).
 
