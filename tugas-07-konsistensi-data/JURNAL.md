@@ -11,7 +11,7 @@ Argumen yang dipertimbangkan:
 - Kesimpulan akhir & alasan: Memilih Client-Centric Consistency (Read-Your-Writes) karena pada aplikasi e-wallet FoodGo, aspek kepuasan pengguna dan akurasi saldo pribadi jauh lebih krusial dibandingkan sinkronisasi global secara instan di seluruh node
 
 ## Simulasi (jika dikerjakan)
-- Hasil skenario naif vs Read-Your-Writes: ...
+- Hasil skenario naif vs Read-Your-Writes: Pada skenario naif, transaksi di server Bandung ditolak karena terjadi inconsistent read—replika Bandung masih membaca saldo lama akibat delay replikasi dari Jakarta meskipun saldo sebenarnya sudah mencukupi. Sebaliknya, pada skenario Read-Your-Writes, klien menyertakan version atau timestamp pembaruan terakhirnya saat mengakses server Bandung. Jika data lokal Bandung masih tertinggal, server akan menunggu proses replikasi selesai sebelum membaca saldo, sehingga pelanggan selalu melihat saldo terbarunya dan transaksi berhasil.
 
 ## Log Penggunaan AI (Level 2)
 
