@@ -1,8 +1,14 @@
 # Jurnal Proses — Tugas 7
 
 ## Diskusi pemilihan model konsistensi
-- Argumen yang dipertimbangkan: ...
-- Kesimpulan akhir & alasan: ...
+Argumen yang dipertimbangkan:
+- Eventual Consistency: Mudah diimplementasikan dan performa tinggi secara global, tetapi memiliki jeda waktu sinkronisasi (replication delay). Kurang cocok untuk transaksi finansial sensitif seperti saldo e-wallet karena dapat menyebabkan stale read (transaksi gagal/saldo belum ter-update).
+
+- Sequential Consistency: Menjamin semua replika melihat urutan operasi yang sama persis, tetapi membutuhkan koordinasi global yang memperlambat latensi dan menurunkan ketersediaan (availability).
+
+- Client-Centric Consistency (Read-Your-Writes): Menjadi jalan tengah terbaik karena menjamin klien yang melakukan write (misalnya top-up di server Jakarta) akan selalu melihat data terbarunya sendiri meskipun membaca dari replika lain (server Bandung), menjaga pengalaman pengguna dan integritas transaksi tanpa mengorbankan performa sistem secara keseluruhan
+
+- Kesimpulan akhir & alasan: Memilih Client-Centric Consistency (Read-Your-Writes) karena pada aplikasi e-wallet FoodGo, aspek kepuasan pengguna dan akurasi saldo pribadi jauh lebih krusial dibandingkan sinkronisasi global secara instan di seluruh node
 
 ## Simulasi (jika dikerjakan)
 - Hasil skenario naif vs Read-Your-Writes: ...
