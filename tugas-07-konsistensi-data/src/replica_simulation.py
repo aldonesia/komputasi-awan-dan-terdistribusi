@@ -112,7 +112,6 @@ class ReplicationSystem:
         melihat versi lebih baru sebelumnya), tunggu/redirect ke replika yang
         sudah punya versi tersebut (di sini cukup simulasikan dengan polling
         sampai versi replika >= versi_minimal, atau redirect ke Jakarta)."""
-        pass
         replica = self._pilih(server)
 
         # Replika sudah cukup baru -> langsung baca (kasus paling umum, tanpa overhead)
@@ -142,6 +141,14 @@ class ReplicationSystem:
 def main():
     system = ReplicationSystem()
     user_id = "user1"
+
+    print("\n=== Skenario naif (bug inconsistent read) ===")
+    system.top_up(user_id, 50000)
+    saldo = system.baca_saldo_naif(user_id, "Bandung")  # dibaca < REPLICATION_DELAY
+    print("Baca saldo dari Bandung (naif):", saldo)
+    assert saldo == 0.0, "harusnya stale (0), Jakarta sudah 50000"
+    print("-> Bug: Bandung masih 0, padahal Jakarta sudah 50000")
+    system.wait_replication()  # Bandung kini versi 1 = 50000
 
     print("\n=== Skenario dengan Read-Your-Writes ===")
     versi_terakhir = system.top_up(user_id, 20000)  # token RYW = versi penulisan ini
@@ -173,9 +180,10 @@ def main():
     print("\nSetelah semua replikasi selesai:")
     print("  Jakarta:", system.jakarta.read(user_id))
     print("  Bandung:", system.bandung.read(user_id))
+    assert system.jakarta.read(user_id) == system.bandung.read(user_id) == 85000
+    print("-> Kedua replika konvergen di 85000 (eventual consistency tercapai)")
     # TODO 3: panggil baca_saldo_read_your_writes dan tunjukkan hasilnya SELALU benar
     # walau dipanggil segera setelah top_up (< REPLICATION_DELAY detik).
-
 
 if __name__ == "__main__":
     main()
