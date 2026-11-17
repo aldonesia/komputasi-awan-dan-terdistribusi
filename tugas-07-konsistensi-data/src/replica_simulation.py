@@ -18,7 +18,6 @@ class Replica:
         self.last_write_version: dict[str, int] = {}
 
     def write(self, user_id: str, saldo_baru: float, version: int):
-        # abaikan update lama yang datang terlambat (jangan menimpa versi lebih baru)
         if version <= self.last_write_version.get(user_id, 0):
             return
         self.saldo[user_id] = saldo_baru
