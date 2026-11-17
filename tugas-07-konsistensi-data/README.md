@@ -24,6 +24,62 @@ Tetapi, dilihat dari dampak bisnisnya, kasus saldo e-wallet sangat sensitif dan 
 Pendekatan ini memastikan pelanggan selalu melihat saldo terbarunya sendiri. Klien akan melacak versi data dari transaksi terakhirnya. Jika klien mengakses server yang versi datanya masih tertinggal (stale), sistem akan menahan respons (polling) hingga replikasi selesai dan versinya sesuai, barulah saldo ditampilkan.
 
 3.
+
+#### A. Skenario Tanpa Jaminan Konsistensi (Terjadi Bug)
+
+```mermaid
+sequenceDiagram
+    participant C as Pelanggan (Client)
+    participant J as Server Jakarta
+    participant B as Server Bandung
+
+    C->>J: 1. Top-up Saldo (mis. Rp50.000)
+    J-->>C: 2. Transaksi Sukses & Saldo tersimpan (Versi 1)
+    
+    note over J,B: Proses replikasi berjalan lambat (Tertunda 2 detik)
+    J-x B: 3. Replikasi data tertunda
+    
+    C->>B: 4. Pesan makanan (Baca saldo dari Bandung)
+    B-->>C: 5. Mengembalikan saldo Rp0 (Stale Read)
+    
+    note over C: BUG: Saldo terbaca Rp0. Transaksi ditolak!
+    
+    note over J,B: Beberapa saat kemudian...
+    B-->>B: 6. Replikasi dari Jakarta akhirnya masuk
+
+
+
+#### B. Skenario Dengan Solusi (Read-Your-Writes)
+
+```mermaid
+sequenceDiagram
+    participant C as Pelanggan (Client)
+    participant J as Server Jakarta
+    participant B as Server Bandung
+
+    note over C,B: Saldo Awal: Rp50.000 (Versi 1)
+    
+    C->>J: 1. Top-up Tambahan (Rp20.000)
+    note over J: Saldo menjadi Rp70.000 (Versi 2)
+    J-->>C: 2. Transaksi Sukses (Client menyimpan target minimal: Versi >= 2)
+    
+    note over J,B: Proses replikasi berjalan lambat (Tertunda 2 detik)
+    J-x B: 3. Replikasi data tertunda
+    
+    C->>B: 4. Pesan makanan (Meminta data dengan syarat Versi >= 2)
+    
+    note over B: Sistem mendeteksi Bandung masih Versi 1 (Stale)
+    note over B: Sistem menahan proses (Polling / Menunggu sinkronisasi)
+    
+    note over J,B: Replikasi akhirnya tiba dari Jakarta
+    B-->>B: 5. Bandung menerima update (Saldo = Rp70.000, Versi = 2)
+    
+    note over B: Versi terpenuhi. Data aman dibaca.
+    B-->>C: 6. Mengembalikan saldo Rp70.000 (Read-Your-Writes)
+    
+    note over C: SOLUSI: Saldo terbaca akurat. Transaksi berhasil diproses!
+    
+
 ### Bagian 2 — Simulasi (opsional, nilai tambah)
 
 Skeleton `src/replica_simulation.py` mensimulasikan dua replika (Jakarta & Bandung) dengan delay replikasi buatan. Lengkapi TODO untuk:
