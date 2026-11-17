@@ -18,6 +18,8 @@ Data saldo *e-wallet* pelanggan FoodGo berbeda antara server wilayah **Jakarta**
 ### jawaban — Analisis
 1.Sistem e-wallet FoodGo tidak harus menggunakan Sequential Consistency pada semua server.Model Eventual Consistency lebih masuk akal karena memungkinkan replikasi data antar server (Jakarta dan Bandung) berjalan secara asinkron tanpa memblokir sistem utama, sehingga performa tetap optimal.
 Tetapi, dilihat dari dampak bisnisnya, kasus saldo e-wallet sangat sensitif dan jauh berbeda dengan sekadar "jumlah like" di media sosial. Mengandalkan Eventual Consistency saja berisiko menimbulkan stale read (membaca saldo lama). Jika pelanggan berpindah server dalam hitungan detik setelah top-up, transaksi pembelian bisa ditolak karena saldo di server tujuan belum ter-update, yang berakibat fatal pada kepercayaan pengguna dan kerugian bisnis.
+
+
 2.Karena Eventual Consistency murni tidak cukup, kami mengusulkan penerapan Client-Centric Consistency menggunakan model Read-Your-Writes.
 Pendekatan ini memastikan pelanggan selalu melihat saldo terbarunya sendiri. Klien akan melacak versi data dari transaksi terakhirnya. Jika klien mengakses server yang versi datanya masih tertinggal (stale), sistem akan menahan respons (polling) hingga replikasi selesai dan versinya sesuai, barulah saldo ditampilkan.
 
