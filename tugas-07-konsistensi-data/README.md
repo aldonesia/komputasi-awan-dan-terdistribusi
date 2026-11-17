@@ -40,7 +40,7 @@ Jika dilihat dari **dampak bisnis nyata**, toleransi terhadap data basi pasti be
 ### Mengapa Tidak Menggunakan Strict Sequential Consistency Secara Global?
 Menerapkan *Sequential Consistency* yang ketat di seluruh replika mengharuskan setiap operasi baca/tulis dikunci dan disinkronkan secara serentak lintas wilayah sebelum transaksi dianggap sah. Pendekatan ini menciptakan *bottleneck* jaringan dan menurunkan ketersediaan layanan (*availability*) apabila koneksi antar-datacenter Jakarta–Bandung mengalami latensi tinggi.
 
-**Keputusan Arsitektur:** FoodGo tetap mempertahankan replikasi asinkron (*Eventual Consistency*) di lapisan penyimpanan antar-server untuk menjaga performa, tetapi melapisinya dengan jaminan **Client-Centric Consistency** agar pengalaman transaksi setiap individu tetap konsisten.
+FoodGo tetap mempertahankan replikasi asinkron (*Eventual Consistency*) di lapisan penyimpanan antar-server untuk menjaga performa, tetapi melapisinya dengan jaminan **Client-Centric Consistency** agar pengalaman transaksi setiap individu tetap konsisten.
 
 ---
 
