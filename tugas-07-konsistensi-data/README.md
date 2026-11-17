@@ -27,14 +27,15 @@ python3 src/replica_simulation.py
 
 ## Jawaban Hasil Analisis:
 
+Bagian Niko
 ### 1. Analisis Pemilihan Model Konsistensi
 
 ### Apakah Eventual Consistency Saja Cukup?
 **Tidak cukup.** Pada replikasi antarwilayah (Jakarta dan Bandung), *Eventual Consistency* murni memang memberikan latensi tulis yang rendah dan ketersediaan tinggi (*high availability*), tetapi mengizinkan adanya jeda waktu (*inconsistency window*) di mana dua server menyimpan nilai saldo yang berbeda.
 
-Jika ditinjau dari **dampak bisnis nyata**, toleransi terhadap data basi (*stale data*) sangat bergantung pada jenis domain aplikasinya:
-* **Fitur Non-Transaksional (Contoh: Jumlah *Like* Media Sosial):** Jika pengguna A menyukai sebuah unggahan dan pengguna B melihat angka *like* tertinggal selama 2 detik, tidak ada kerugian finansial maupun kegagalan alur bisnis. *Eventual Consistency* murni sudah sangat memadai.
-* **Sistem Finansial (*E-Wallet* FoodGo):** Saldo dompet digital adalah data transaksional yang sensitif. Ketika pelanggan melakukan *top-up* di server Jakarta lalu langsung memesan makanan melalui server Bandung dalam hitungan detik, pembacaan saldo lama (*stale read*) menyebabkan transaksi ditolak (*false rejection*) meskipun dana sebenarnya sudah masuk. Dampak bisnisnya fatal: transaksi gagal terjadi (potensi pendapatan hilang), muncul kepanikan pengguna karena saldo dianggap raib, dan tingkat kepercayaan pelanggan terhadap keamanan finansial aplikasi menurun drastis.
+Jika dilihat dari **dampak bisnis nyata**, toleransi terhadap data basi pasti bergantung dengan jenis domain aplikasinya:
+* **Fitur Non-Transaksional (Contoh: Jumlah *Like* Media Sosial):** Jika pengguna A menyukai sebuah unggahan dan pengguna B melihat angka *like* tertinggal selama 2 detik, tidak ada kerugian finansial maupun kegagalan alur bisnis. *Eventual Consistency* saja sudah cukup.
+* **Sistem Finansial (*E-Wallet* FoodGo):** Saldo dompet digital adalah data transaksional data yang sensitif. Ketika pelanggan melakukan *top-up* di server Jakarta lalu langsung memesan makanan melalui server Bandung dalam hitungan detik, pembacaan saldo lama (*stale read*) menyebabkan transaksi ditolak (*false rejection*) meskipun dana sebenarnya sudah masuk. Dampak bisnisnya fatal: transaksi gagal terjadi (potensi pendapatan hilang), pengguna bisa panik karena saldo dianggap raib, dan tingkat kepercayaan pelanggan terhadap keamanan finansial aplikasi menurun drastis.
 
 ### Mengapa Tidak Menggunakan Strict Sequential Consistency Secara Global?
 Menerapkan *Sequential Consistency* yang ketat di seluruh replika mengharuskan setiap operasi baca/tulis dikunci dan disinkronkan secara serentak lintas wilayah sebelum transaksi dianggap sah. Pendekatan ini menciptakan *bottleneck* jaringan dan menurunkan ketersediaan layanan (*availability*) apabila koneksi antar-datacenter Jakarta–Bandung mengalami latensi tinggi.
@@ -43,9 +44,10 @@ Menerapkan *Sequential Consistency* yang ketat di seluruh replika mengharuskan s
 
 ---
 
+Bagian Liel
 ### 2. Usulan Solusi: Client-Centric Consistency (*Read-Your-Writes*)
 
-Untuk menutup celah *inconsistent read* tanpa mengorbankan performa global, sistem menerapkan model **Read-Your-Writes Consistency**. Model ini menjamin bahwa setelah seorang pelanggan berhasil memperbarui datanya sendiri (operasi *write*), setiap pembacaan berikutnya (operasi *read*) oleh pelanggan tersebut akan selalu melihat hasil pembaruan terakhirnya, meskipun permintaan dialihkan ke server replika lain.
+Untuk menutup bug *inconsistent read* tanpa mengorbankan performa global, sistem menerapkan model **Read-Your-Writes Consistency**. Model ini menjamin bahwa setelah seorang pelanggan berhasil memperbarui datanya sendiri (operasi *write*), setiap pembacaan berikutnya (operasi *read*) oleh pelanggan tersebut akan selalu melihat hasil pembaruan terakhirnya, meskipun permintaan dialihkan ke server replika lain.
 
 ### Mekanisme Implementasi Konkret
 1. **Pelacakan Versi Data (*Monotonic Versioning*):** Setiap replika menyimpan metadata versi terakhir untuk setiap pengguna (`last_write_version[user_id]`). Setiap kali terjadi operasi *top-up* di server Jakarta, nilai versi dinaikkan secara berurutan (`version += 1`).
