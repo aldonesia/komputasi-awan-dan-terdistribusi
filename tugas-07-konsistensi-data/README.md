@@ -78,8 +78,10 @@ sequenceDiagram
     B-->>C: 6. Mengembalikan saldo Rp70.000 (Read-Your-Writes)
     
     note over C: SOLUSI: Saldo terbaca akurat. Transaksi berhasil diproses!
-    ```
+```
+
 ---
+
 ### Bagian 2 — Simulasi (opsional, nilai tambah)
 
 Skeleton `src/replica_simulation.py` mensimulasikan dua replika (Jakarta & Bandung) dengan delay replikasi buatan. Lengkapi TODO untuk:
