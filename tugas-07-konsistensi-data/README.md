@@ -24,6 +24,101 @@ Skeleton `src/replica_simulation.py` mensimulasikan dua replika (Jakarta & Bandu
 python3 src/replica_simulation.py
 ```
 
+
+## Jawaban Hasil Analisis:
+
+### 1. Analisis Pemilihan Model Konsistensi
+
+### Apakah Eventual Consistency Saja Cukup?
+**Tidak cukup.** Pada replikasi antarwilayah (Jakarta dan Bandung), *Eventual Consistency* murni memang memberikan latensi tulis yang rendah dan ketersediaan tinggi (*high availability*), tetapi mengizinkan adanya jeda waktu (*inconsistency window*) di mana dua server menyimpan nilai saldo yang berbeda.
+
+Jika ditinjau dari **dampak bisnis nyata**, toleransi terhadap data basi (*stale data*) sangat bergantung pada jenis domain aplikasinya:
+* **Fitur Non-Transaksional (Contoh: Jumlah *Like* Media Sosial):** Jika pengguna A menyukai sebuah unggahan dan pengguna B melihat angka *like* tertinggal selama 2 detik, tidak ada kerugian finansial maupun kegagalan alur bisnis. *Eventual Consistency* murni sudah sangat memadai.
+* **Sistem Finansial (*E-Wallet* FoodGo):** Saldo dompet digital adalah data transaksional yang sensitif. Ketika pelanggan melakukan *top-up* di server Jakarta lalu langsung memesan makanan melalui server Bandung dalam hitungan detik, pembacaan saldo lama (*stale read*) menyebabkan transaksi ditolak (*false rejection*) meskipun dana sebenarnya sudah masuk. Dampak bisnisnya fatal: transaksi gagal terjadi (potensi pendapatan hilang), muncul kepanikan pengguna karena saldo dianggap raib, dan tingkat kepercayaan pelanggan terhadap keamanan finansial aplikasi menurun drastis.
+
+### Mengapa Tidak Menggunakan Strict Sequential Consistency Secara Global?
+Menerapkan *Sequential Consistency* yang ketat di seluruh replika mengharuskan setiap operasi baca/tulis dikunci dan disinkronkan secara serentak lintas wilayah sebelum transaksi dianggap sah. Pendekatan ini menciptakan *bottleneck* jaringan dan menurunkan ketersediaan layanan (*availability*) apabila koneksi antar-datacenter Jakarta–Bandung mengalami latensi tinggi.
+
+**Keputusan Arsitektur:** FoodGo tetap mempertahankan replikasi asinkron (*Eventual Consistency*) di lapisan penyimpanan antar-server untuk menjaga performa, tetapi melapisinya dengan jaminan **Client-Centric Consistency** agar pengalaman transaksi setiap individu tetap konsisten.
+
+---
+
+### 2. Usulan Solusi: Client-Centric Consistency (*Read-Your-Writes*)
+
+Untuk menutup celah *inconsistent read* tanpa mengorbankan performa global, sistem menerapkan model **Read-Your-Writes Consistency**. Model ini menjamin bahwa setelah seorang pelanggan berhasil memperbarui datanya sendiri (operasi *write*), setiap pembacaan berikutnya (operasi *read*) oleh pelanggan tersebut akan selalu melihat hasil pembaruan terakhirnya, meskipun permintaan dialihkan ke server replika lain.
+
+### Mekanisme Implementasi Konkret
+1. **Pelacakan Versi Data (*Monotonic Versioning*):** Setiap replika menyimpan metadata versi terakhir untuk setiap pengguna (`last_write_version[user_id]`). Setiap kali terjadi operasi *top-up* di server Jakarta, nilai versi dinaikkan secara berurutan (`version += 1`).
+2. **Penyimpanan State di Sisi Klien:** Setelah operasi *top-up* berhasil, server Jakarta mengembalikan respons sukses beserta nomor versi terbaru (misalnya `version = 1`) ke aplikasi pelanggan. Aplikasi klien menyimpan nilai ini sebagai `min_version`.
+3. **Validasi Versi Saat Pembacaan (*Version Check*):** Ketika pelanggan berpindah koneksi ke server Bandung untuk memesan makanan, aplikasi klien menyertakan `min_version` pada parameter/header permintaan *read*. Server Bandung membandingkan versi lokalnya dengan `min_version` dari klien:
+   * Jika `versi_lokal >= min_version`, server Bandung langsung mengembalikan data saldo.
+   * Jika `versi_lokal < min_version` (replikasi dari Jakarta belum tiba), server Bandung **menahan respons sementara (*polling/wait*)** hingga proses replikasi selesai memperbarui data lokal, atau **meneruskan permintaan (*redirect*)** langsung ke server Jakarta yang memiliki data terbaru.
+
+---
+
+## 3. Diagram Alir Urutan (*Sequence Diagram*)
+
+### A. Skenario Tanpa Jaminan Konsistensi (Bug Terjadi)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Pelanggan
+    participant JKT as Server Jakarta
+    participant BDG as Server Bandung
+
+    Note over JKT,BDG: Saldo awal user1 = 0 (versi 0)
+
+    Pelanggan->>JKT: POST /topup (user1, Rp50.000)
+    activate JKT
+    JKT->>JKT: Write saldo = 50.000 (versi 1)
+    JKT-->>Pelanggan: 200 OK (Top-up berhasil)
+    JKT-)BDG: Replikasi asinkron (delay 2.0 detik)
+    deactivate JKT
+
+    Note over Pelanggan,BDG: Pelanggan langsung memesan makanan (0.5 detik kemudian)
+
+    Pelanggan->>BDG: POST /order (user1, total Rp30.000)
+    activate BDG
+    BDG->>BDG: Read saldo lokal = 0 (masih versi 0)
+    BDG-->>Pelanggan: 400 Bad Request (Transaksi Ditolak: Saldo Tidak Cukup)
+    deactivate BDG
+
+    Note over JKT,BDG: Setelah 2.0 detik, replikasi baru tiba
+    BDG->>BDG: Update saldo = 50.000 (versi 1)
+```
+### B. Skenario Dengan Solusi Read-Your-Writes (Bug diatasi
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Pelanggan
+    participant JKT as Server Jakarta
+    participant BDG as Server Bandung
+
+    Note over JKT,BDG: Saldo awal user1 = 0 (versi 0)
+
+    Pelanggan->>JKT: POST /topup (user1, Rp50.000)
+    activate JKT
+    JKT->>JKT: Write saldo = 50.000 (versi 1)
+    JKT-->>Pelanggan: 200 OK (versi = 1)
+    Note over Pelanggan: Klien menyimpan min_version = 1
+    JKT-)BDG: Replikasi asinkron (delay 2.0 detik)
+    deactivate JKT
+
+    Note over Pelanggan,BDG: Pelanggan langsung memesan makanan (0.5 detik kemudian)
+
+    Pelanggan->>BDG: POST /order (user1, Rp30.000, min_version = 1)
+    activate BDG
+    BDG->>BDG: Cek versi lokal (0) < min_version (1)
+    Note over BDG: Data lokal basi! Tahan request (polling) hingga sinkron
+
+    BDG->>BDG: Replikasi diterima -> saldo = 50.000 (versi 1)
+    BDG->>BDG: Validasi versi lokal (1) >= min_version (1) OK
+    BDG->>BDG: Potong saldo Rp30.000 -> sisa Rp20.000 (versi 2)
+    BDG-->>Pelanggan: 200 OK (Pesanan Berhasil Diproses)
+    deactivate BDG
+```
 ## Struktur Submission
 
 ```
