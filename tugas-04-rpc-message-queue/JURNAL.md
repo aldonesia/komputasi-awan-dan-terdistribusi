@@ -1,20 +1,14 @@
 # Jurnal Proses — Tugas 4
 
-
 ## Jalur yang dipilih
-
-[RPC / MQ / keduanya], alasan: ...
-
+- Jalur yang dipilih adalah RPC karena lebih sederhana untuk disiapkan, menggunakan standard library Python, dan sesuai untuk operasi yang membutuhkan respons langsung seperti cek saldo dan proses pembayaran.
 
 ## Kendala teknis
+- Tidak ada
 
-Error saat setup (mis. koneksi RabbitMQ ditolak, port bentrok): ...
+## Analisis: apa yang terjadi pada request RPC jika server mati di tengah proses (Jalur A)
+- Jika server RPC mati di tengah proses, request yang sedang diproses akan terhenti dan klien akan menerima error atau timeout karena tidak ada balasan dari server. Hal ini menunjukkan sifat sinkron dari RPC, dimana klien harus menunggu respons dari server sebelum melanjutkan eksekusi.
 
-
-## Uji "pesan tidak hilang" (khusus Jalur B)
-
-Langkah uji: matikan consumer → jalankan publisher → nyalakan consumer
-Hasil yang diamati: ...
 ## Log Penggunaan AI (Level 2)
 
 > Wajib diisi sesuai kebijakan Level 2 di [`../RUBRIK-UMUM.md`](../RUBRIK-UMUM.md). Tulis "Tidak memakai AI" pada baris pertama jika memang tidak dipakai. Hanya untuk brainstorming ide/outline — bukan untuk kode/analisis/teks akhir.
