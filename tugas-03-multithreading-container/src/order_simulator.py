@@ -1,13 +1,12 @@
-"""
-Tugas 3 - Simulasi Pesanan Masuk dengan Multithreading
+#Tugas 3 - Simulasi Pesanan Masuk dengan Multithreading
 
-Skeleton ini sengaja belum lengkap. Isi bagian bertanda TODO.
-Jangan mengubah nama fungsi (dipakai untuk pengecekan otomatis oleh asisten).
-"""
+#Skeleton ini sengaja belum lengkap. Isi bagian bertanda TODO.
+#Jangan mengubah nama fungsi (dipakai untuk pengecekan otomatis oleh asisten).
 
 import threading
 import random
 import time
+import os
 
 NUM_ORDERS = 100        # jumlah pesanan simulasi yang masuk
 NUM_WORKERS = 10        # jumlah thread pekerja
@@ -17,7 +16,8 @@ NUM_WORKERS = 10        # jumlah thread pekerja
 processed_count = 0
 
 # TODO 1: Buat objek Lock di sini untuk melindungi `processed_count`.
-# lock = threading.Lock()
+lock = threading.Lock()
+USE_LOCK = True
 
 
 def process_order(order_id: int) -> None:
@@ -33,7 +33,14 @@ def process_order(order_id: int) -> None:
     # Langkah 2: bungkus increment dengan `with lock:` dan buktikan hasilnya
     #            selalu tepat NUM_ORDERS. Simpan bukti kedua kondisi ini
     #            di JURNAL.md / folder bukti/.
-    pass
+    if USE_LOCK:
+        with lock:
+            current = processed_count
+            processed_count = current + 1
+    else:
+        current = processed_count
+        time.sleep(0.0005) # agar race condition lebih mudah telihat/terjadi           
+        processed_count = current + 1
 
 
 def worker(order_ids: list) -> None:
@@ -49,7 +56,17 @@ def main() -> None:
     # threading.Thread per bagian yang menjalankan `worker(...)`,
     # start semua thread, lalu join semua thread sebelum lanjut.
     threads = []
-    # ... isi logika pembagian tugas & pembuatan thread di sini ...
+     # 1. Bagi order_ids menjadi NUM_WORKERS bagian (round-robin)
+    chunks = [order_ids[i::NUM_WORKERS] for i in range(NUM_WORKERS)]
+
+    # 2. Buat satu thread per bagian
+    for chunk in chunks:
+        t = threading.Thread(target=worker, args=(chunk,))
+        threads.append(t)
+
+    # 3. Start semua thread
+    for t in threads:
+        t.start()
 
     for t in threads:
         t.join()

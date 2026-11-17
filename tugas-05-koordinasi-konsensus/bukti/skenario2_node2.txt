@@ -1,0 +1,19 @@
+17:18:55 [Node 2] Listening di port 5002
+17:18:56 [Node 2] Memulai election ke peer lebih tinggi: {3: 5003, 4: 5004, 5: 5005}
+17:18:57 [Node 2] Menerima pesan 'ELECTION' dari node 1
+17:18:58 [Node 2] Menerima pesan 'OK' dari node 3
+17:18:59 [Node 2] Menerima pesan 'COORDINATOR' dari node 5
+17:18:59 [Node 2] Leader sekarang: node 5
+17:18:59 [Node 2] Menunggu coordinator dari node lain
+17:18:59 [Node 2] Menerima pesan 'OK' dari node 4
+17:19:00 [Node 2] Menerima pesan 'OK' dari node 5
+17:19:03 [Node 2] Menerima pesan 'COORDINATOR' dari node 5
+17:19:03 [Node 2] Leader sekarang: node 5
+17:20:43 [Node 2] Leader node 5 tidak merespons, memulai election
+17:20:43 [Node 2] Memulai election ke peer lebih tinggi: {3: 5003, 4: 5004, 5: 5005}
+17:20:44 [Node 2] Menerima pesan 'ELECTION' dari node 1
+17:20:45 [Node 2] Menerima pesan 'OK' dari node 3
+17:20:46 [Node 2] Menerima pesan 'OK' dari node 4
+17:20:47 [Node 2] Menunggu coordinator dari node lain
+17:20:50 [Node 2] Menerima pesan 'COORDINATOR' dari node 4
+17:20:50 [Node 2] Leader sekarang: node 4

@@ -1,0 +1,11 @@
+17:11:02 [Node 4] Listening di port 5004
+17:11:03 [Node 4] Memulai election ke peer lebih tinggi: {5: 5005}
+17:11:04 [Node 4] Menerima pesan 'ELECTION' dari node 3
+17:11:05 [Node 4] Menerima pesan 'ELECTION' dari node 2
+17:11:05 [Node 4] Menerima pesan 'OK' dari node 5
+17:11:05 [Node 4] Menunggu coordinator dari node lain
+17:11:06 [Node 4] Menerima pesan 'ELECTION' dari node 1
+17:11:08 [Node 4] Menerima pesan 'COORDINATOR' dari node 5
+17:11:08 [Node 4] Leader sekarang: node 5
+17:11:12 [Node 4] Menerima pesan 'COORDINATOR' dari node 5
+17:11:12 [Node 4] Leader sekarang: node 5
