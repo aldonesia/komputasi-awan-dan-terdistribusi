@@ -59,7 +59,7 @@ Untuk menutup bug *inconsistent read* tanpa mengorbankan performa global, sistem
 ---
 
 Bukti:
-![Bukti](butki/simulasi1.png)
+![Bukti](bukti/simulasi1.png)
 
 
 ### 3. Diagram Alir Urutan (*Sequence Diagram*)
