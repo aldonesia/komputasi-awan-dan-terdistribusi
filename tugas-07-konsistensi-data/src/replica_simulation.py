@@ -1,81 +1,64 @@
-"""
-Tugas 7 (opsional) - Simulasi Replikasi Dua Server (Jakarta & Bandung)
-
-Mensimulasikan delay replikasi dan masalah inconsistent read,
-lalu memperbaikinya dengan mekanisme Read-Your-Writes sederhana.
-"""
-
 import time
 import threading
 
-REPLICATION_DELAY = 2.0  # detik, simulasi lambatnya sinkronisasi antar server
-
-
-class Replica:
-    def __init__(self, name: str):
+class ReplicaServer:
+    def __init__(self, name):
         self.name = name
-        self.saldo: dict[str, float] = {}
-        self.last_write_version: dict[str, int] = {}
+        self.saldo = 0
+        self.version = 0
 
-    def write(self, user_id: str, saldo_baru: float, version: int):
-        self.saldo[user_id] = saldo_baru
-        self.last_write_version[user_id] = version
-        print(f"[{self.name}] WRITE saldo {user_id} = {saldo_baru} (versi {version})")
-
-    def read(self, user_id: str) -> float:
-        return self.saldo.get(user_id, 0.0)
-
-
-class ReplicationSystem:
+class EWalletSystem:
     def __init__(self):
-        self.jakarta = Replica("Jakarta")
-        self.bandung = Replica("Bandung")
-        self.version_counter = 0
+        self.jakarta = ReplicaServer("Jakarta")
+        self.bandung = ReplicaServer("Bandung")
+        self.lock = threading.Lock()
 
-    def top_up(self, user_id: str, jumlah: float):
-        """Top-up selalu ditulis dulu ke server Jakarta (mis. server terdekat pelanggan)."""
-        self.version_counter += 1
-        version = self.version_counter
-        saldo_baru = self.jakarta.read(user_id) + jumlah
-        self.jakarta.write(user_id, saldo_baru, version)
+    def top_up_jakarta(self, amount):
+        """Top-up dilakukan di server Jakarta"""
+        with self.lock:
+            self.jakarta.saldo += amount
+            self.jakarta.version += 1
+            print(f"[WRITE] Top-up Rp{amount} di Server Jakarta. Saldo: {self.jakarta.saldo} (Versi: {self.jakarta.version})")
+        
+        # Mensimulasikan delay replikasi latar belakang ke Bandung
+        threading.Thread(target=self._background_replication, args=(self.jakarta.saldo, self.jakarta.version)).start()
 
-        # TODO 1: replikasi ke Bandung TERTUNDA (simulasikan dengan
-        # threading.Timer(REPLICATION_DELAY, ...) yang memanggil
-        # self.bandung.write(user_id, saldo_baru, version) setelah delay.
-        print(f"[TODO] Replikasi ke Bandung akan tertunda {REPLICATION_DELAY} detik")
+    def _background_replication(self, saldo_val, version_val):
+        time.sleep(2) # Simulasi delay jaringan lambat (2 detik)
+        with self.lock:
+            if version_val > self.bandung.version:
+                self.bandung.saldo = saldo_val
+                self.bandung.version = version_val
+                print(f"[REPLICATION] Server Bandung tersinkronisasi. Saldo: {self.bandung.saldo} (Versi: {self.bandung.version})")
 
-    def baca_saldo_naif(self, user_id: str, server: str) -> float:
-        """Baca saldo TANPA mekanisme Read-Your-Writes - bisa saja stale."""
-        replica = self.jakarta if server == "Jakarta" else self.bandung
-        return replica.read(user_id)
+    def read_without_consistency(self, server_obj, client_expected_version=None):
+        """TODO 1: Simulasi inconsistent read (bisa membaca data lama jika replikasi belum selesai)"""
+        print(f"[READ] Membaca saldo dari Server {server_obj.name} -> Saldo: {server_obj.saldo} (Versi: {server_obj.version})")
+        return server_obj.saldo
 
-    def baca_saldo_read_your_writes(self, user_id: str, server: str, versi_minimal: int) -> float:
-        """TODO 2: implementasikan Read-Your-Writes -
-        jika replika yang dituju versi datanya < versi_minimal (client pernah
-        melihat versi lebih baru sebelumnya), tunggu/redirect ke replika yang
-        sudah punya versi tersebut (di sini cukup simulasikan dengan polling
-        sampai versi replika >= versi_minimal, atau redirect ke Jakarta)."""
-        pass
-
-
-def main():
-    system = ReplicationSystem()
-    user_id = "user1"
-
-    print("=== Skenario NAIF (tanpa Read-Your-Writes) ===")
-    system.top_up(user_id, 50000)
-    time.sleep(0.5)  # pelanggan langsung pesan makanan < REPLICATION_DELAY detik kemudian
-    print("Baca saldo dari Bandung (naif):", system.baca_saldo_naif(user_id, "Bandung"))
-    print("-> Harusnya 50000, tapi karena delay replikasi, hasilnya bisa 0 (BUG)")
-
-    time.sleep(REPLICATION_DELAY + 0.5)
-
-    print("\n=== Skenario dengan Read-Your-Writes ===")
-    system.top_up(user_id, 20000)
-    versi_terakhir = system.version_counter
-    # TODO 3: panggil baca_saldo_read_your_writes dan tunjukkan hasilnya SELALU benar
-    # walau dipanggil segera setelah top_up (< REPLICATION_DELAY detik).
-
+    def read_with_read_your_writes(self, server_obj, client_version):
+        """TODO 2: Mekanisme Read-Your-Writes sederhana berbasis version checking"""
+        with self.lock:
+            if server_obj.version < client_version:
+                print(f"[SYNC-FIX] Server {server_obj.name} mendeteksi data kedaluwarsa (Lokal v{server_obj.version} < Klien v{client_version}). Melakukan sinkronisasi paksa...")
+                # Paksa ambil data terbaru dari Jakarta (asumsi master/primary terdepan)
+                server_obj.saldo = self.jakarta.saldo
+                server_obj.version = self.jakarta.version
+            
+            print(f"[READ-SAFE] Server {server_obj.name} menyajikan saldo konsisten -> Saldo: {server_obj.saldo} (Versi: {server_obj.version})")
+        return server_obj.saldo
 
 if __name__ == "__main__":
-    main()
+    system = EWalletSystem()
+
+    print("--- SKENARIO 1: INCONSISTENT READ (BUG) ---")
+    system.top_up_jakarta(50000)
+    # Langsung dibaca di Bandung sebelum replikasi selesai (delay 2 detik)
+    system.read_without_consistency(system.bandung)
+    
+    time.sleep(3) # Tunggu replikasi selesai sepenuhnya
+
+    print("\n--- SKENARIO 2: READ-YOUR-WRITES CONSISTENCY (SOLUSI) ---")
+    system.top_up_jakarta(100000)
+    # Klien membawa version token terbaru (misal: Versi 2) langsung membaca di Bandung
+    system.read_with_read_your_writes(system.bandung, client_version=2)
