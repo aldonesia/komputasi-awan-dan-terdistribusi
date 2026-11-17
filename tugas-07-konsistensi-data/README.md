@@ -14,6 +14,11 @@ Data saldo *e-wallet* pelanggan FoodGo berbeda antara server wilayah **Jakarta**
 2. Jika kalian menyimpulkan Eventual Consistency saja **tidak cukup** untuk skenario ini, usulkan pendekatan **Client-Centric Consistency** yang relevan (mis. *Read-Your-Writes*: pelanggan yang baru top-up harus selalu melihat saldo terbarunya sendiri, walau replika lain belum sinkron).
 3. Gambarkan **diagram alir urutan (sequence diagram)** yang menunjukkan operasi read/write antara pelanggan, server Jakarta, server Bandung, dan proses replikasi — untuk skenario **tanpa** jaminan konsistensi (bug terjadi) DAN skenario **dengan** solusi yang kalian usulkan (bug teratasi). Pakai Mermaid (`sequenceDiagram`) di `README.md` — lihat contoh cara pakai di Tugas 2.
 
+
+### jawaban — Analisis
+1.Sistem e-wallet FoodGo tidak harus menggunakan Sequential Consistency pada semua server.Model Eventual Consistency lebih masuk akal karena memungkinkan replikasi data antar server (Jakarta dan Bandung) berjalan secara asinkron tanpa memblokir sistem utama, sehingga performa tetap optimal.
+Tetapi, dilihat dari dampak bisnisnya, kasus saldo e-wallet sangat sensitif dan jauh berbeda dengan sekadar "jumlah like" di media sosial. Mengandalkan Eventual Consistency saja berisiko menimbulkan stale read (membaca saldo lama). Jika pelanggan berpindah server dalam hitungan detik setelah top-up, transaksi pembelian bisa ditolak karena saldo di server tujuan belum ter-update, yang berakibat fatal pada kepercayaan pengguna dan kerugian bisnis.
+
 ### Bagian 2 — Simulasi (opsional, nilai tambah)
 
 Skeleton `src/replica_simulation.py` mensimulasikan dua replika (Jakarta & Bandung) dengan delay replikasi buatan. Lengkapi TODO untuk:
