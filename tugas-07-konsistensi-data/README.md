@@ -58,7 +58,11 @@ Untuk menutup bug *inconsistent read* tanpa mengorbankan performa global, sistem
 
 ---
 
-## 3. Diagram Alir Urutan (*Sequence Diagram*)
+Bukti:
+![Bukti](butki/simulasi1.png)
+
+
+### 3. Diagram Alir Urutan (*Sequence Diagram*)
 
 ### A. Skenario Tanpa Jaminan Konsistensi (Bug Terjadi)
 
