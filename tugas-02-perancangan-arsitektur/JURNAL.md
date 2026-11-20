@@ -1,9 +1,10 @@
 # Jurnal Proses — Tugas 2
 
-## [Tanggal]
-- Opsi arsitektur yang dipertimbangkan: ...
-- Kenapa akhirnya pilih [SOA/Pub-Sub]: ...
-- Revisi diagram (versi 1 → versi 2, apa yang berubah dan kenapa): ...
+## [29 SEPTEMBER 2026]
+
+- Opsi arsitektur yang dipertimbangkan: Layered Architecture, Service-Oriented Architecture (SOA), dan Publish/Subscribe (Pub-Sub).
+- Kenapa akhirnya pilih [SOA/Pub-Sub]: SOA dipilih karena dapat memisahkan sistem menjadi beberapa layanan dengan tanggung jawab yang berbeda, sedangkan Pub-Sub digunakan untuk mendukung komunikasi asynchronous antar komponen. Kombinasi keduanya sesuai untuk sistem yang membutuhkan modularitas dan komunikasi antar layanan tanpa ketergantungan langsung.
+- Revisi diagram (versi 1 → versi 2, apa yang berubah dan kenapa): Pada versi 1, hubungan antar komponen masih dibuat secara umum dan komunikasi antar bagian masih terlihat cukup langsung. Pada versi 2, pembagian layanan diperjelas dan mekanisme komunikasi menggunakan Pub-Sub ditambahkan/diperjelas. Perubahan dilakukan agar tanggung jawab setiap layanan lebih jelas dan alur komunikasi asynchronous lebih mudah dipahami.
 
 ## Log Penggunaan AI (Level 2)
 
@@ -11,4 +12,6 @@
 
 | Tanggal | Tool AI | Prompt yang diberikan | Ringkasan saran/ide AI | Bagaimana diolah jadi tulisan/kode sendiri |
 |---|---|---|---|---|
-| ... | ... | ... | ... | ... |
+| 29-09-2026 | ChatGPT | Menurut kamu arsitektur apa yang cocok untuk sistem pada tugas ini?   | SOA dapat digunakan untuk membagi sistem menjadi beberapa service yang memiliki tanggung jawab masing-masing. Dengan pembagian tersebut, setiap service dapat menangani fungsi tertentu tanpa terlalu bergantung pada service lainnya. Pub/Sub juga dapat digunakan untuk komunikasi antar service sehingga pengirim pesan tidak perlu mengetahui secara langsung siapa yang menerima pesan. Pendekatan ini dapat membantu sistem menjadi lebih modular dan mendukung komunikasi asynchronous. | Sistem menggunakan pendekatan SOA dengan membagi sistem menjadi beberapa layanan berdasarkan fungsi dan tanggung jawabnya. Komunikasi antar layanan menggunakan konsep Pub/Sub sehingga pertukaran pesan dapat dilakukan secara asynchronous tanpa membuat setiap layanan saling bergantung secara langsung.                                                   |
+| 29-09-2026 | ChatGPT | Apa alasan menggunakan SOA dan Pub/Sub?                               | SOA cocok digunakan ketika sistem memiliki beberapa fungsi yang dapat dipisahkan menjadi layanan yang berbeda. Setiap service dapat dikembangkan dan dikelola berdasarkan tanggung jawabnya. Pub/Sub dapat digunakan ketika beberapa komponen membutuhkan pertukaran informasi tanpa harus saling terhubung secara langsung. Dengan mekanisme ini, publisher mengirimkan pesan melalui channel atau topic dan subscriber dapat menerima pesan sesuai kebutuhan.                                | Pemilihan SOA digunakan untuk membuat pembagian fungsi pada sistem menjadi lebih terstruktur, sehingga setiap service mempunyai tugas yang lebih spesifik. Pub/Sub digunakan sebagai mekanisme komunikasi antar service agar pengiriman informasi dapat dilakukan melalui pesan dan tidak memerlukan hubungan langsung antara pengirim dengan setiap penerima. |
+| 29-09-2026 | ChatGPT | Bagaimana sebaiknya hubungan antar komponen ditampilkan pada diagram? | Diagram sebaiknya menunjukkan komponen berdasarkan fungsi atau service yang dimiliki sistem. Hubungan antar komponen perlu dibuat jelas agar alur data dan komunikasi dapat dipahami. Jika menggunakan Pub/Sub, publisher, topic atau message broker, dan subscriber dapat ditampilkan sehingga terlihat bagaimana pesan dikirim dan diterima. Penyusunan posisi komponen juga sebaiknya dibuat sederhana agar garis hubungan tidak saling bertumpuk dan diagram lebih mudah dibaca.           | Diagram disusun dengan memisahkan komponen berdasarkan fungsi masing-masing dan memperjelas hubungan antar komponen melalui alur komunikasi Pub/Sub. Posisi setiap komponen juga diatur agar hubungan antar service, publisher, topic atau message broker, dan subscriber dapat terlihat dengan jelas serta alur pertukaran pesan lebih mudah dipahami.        |

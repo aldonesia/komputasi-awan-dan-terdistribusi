@@ -32,30 +32,43 @@ class ReplicationSystem:
         self.bandung = Replica("Bandung")
         self.version_counter = 0
 
+
     def top_up(self, user_id: str, jumlah: float):
-        """Top-up selalu ditulis dulu ke server Jakarta (mis. server terdekat pelanggan)."""
+        """Top-up selalu ditulis dulu ke server Jakarta."""
         self.version_counter += 1
         version = self.version_counter
         saldo_baru = self.jakarta.read(user_id) + jumlah
         self.jakarta.write(user_id, saldo_baru, version)
 
-        # TODO 1: replikasi ke Bandung TERTUNDA (simulasikan dengan
-        # threading.Timer(REPLICATION_DELAY, ...) yang memanggil
-        # self.bandung.write(user_id, saldo_baru, version) setelah delay.
-        print(f"[TODO] Replikasi ke Bandung akan tertunda {REPLICATION_DELAY} detik")
+    # Replikasi ke Bandung setelah delay
+        timer = threading.Timer(
+            REPLICATION_DELAY,
+            self.bandung.write,
+            args=(user_id, saldo_baru, version)
+        )
+        timer.start()
+
+        print(f"[INFO] Replikasi ke Bandung tertunda {REPLICATION_DELAY} detik")
+
 
     def baca_saldo_naif(self, user_id: str, server: str) -> float:
         """Baca saldo TANPA mekanisme Read-Your-Writes - bisa saja stale."""
         replica = self.jakarta if server == "Jakarta" else self.bandung
         return replica.read(user_id)
 
+
     def baca_saldo_read_your_writes(self, user_id: str, server: str, versi_minimal: int) -> float:
-        """TODO 2: implementasikan Read-Your-Writes -
-        jika replika yang dituju versi datanya < versi_minimal (client pernah
-        melihat versi lebih baru sebelumnya), tunggu/redirect ke replika yang
-        sudah punya versi tersebut (di sini cukup simulasikan dengan polling
-        sampai versi replika >= versi_minimal, atau redirect ke Jakarta)."""
-        pass
+        """Membaca saldo dengan mekanisme Read-Your-Writes."""
+        replica = self.jakarta if server == "Jakarta" else self.bandung
+
+        versi_terbaca = replica.last_write_version.get(user_id, 0)
+
+        if versi_terbaca < versi_minimal:
+            print("[INFO] Replica belum memiliki data terbaru, redirect ke Jakarta")
+            return self.jakarta.read(user_id)
+
+        return replica.read(user_id)
+
 
 
 def main():
@@ -71,10 +84,17 @@ def main():
     time.sleep(REPLICATION_DELAY + 0.5)
 
     print("\n=== Skenario dengan Read-Your-Writes ===")
+
     system.top_up(user_id, 20000)
     versi_terakhir = system.version_counter
-    # TODO 3: panggil baca_saldo_read_your_writes dan tunjukkan hasilnya SELALU benar
-    # walau dipanggil segera setelah top_up (< REPLICATION_DELAY detik).
+
+    # Membaca saldo dengan Read-Your-Writes
+    saldo = system.baca_saldo_read_your_writes(
+        user_id, "Bandung", versi_terakhir
+    )
+
+    print("Baca saldo Bandung (Read-Your-Writes):", saldo)
+    print("-> Saldo tetap benar meskipun replikasi belum selesai.")
 
 
 if __name__ == "__main__":
