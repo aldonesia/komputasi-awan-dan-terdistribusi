@@ -1,57 +1,36 @@
-# Tugas 6 (Pekan 6) — Penamaan & Resolusi Lokasi
+# Tugas 6 — Penamaan dan Resolusi Lokasi
 
-**Materi terkait:** Flat Naming, Structured Naming (DNS), Distributed Hash Table (DHT)/Chord.
+## Analisis FoodGo
 
-## Studi Kasus
+ID kurir bersifat tetap sedangkan alamat IP berubah ketika kurir berpindah jaringan. Karena itu, aplikasi memakai ID kurir sebagai nama stabil dan memperbarui pasangan ID→IP saat kurir mendaftar ulang. Dengan Chord, hash ID kurir menentukan node penanggung jawab; pencarian tidak bergantung pada satu tabel pusat yang menjadi bottleneck sekaligus titik gagal tunggal. Saat node berubah, hanya sebagian rentang key yang perlu berpindah ke successor baru.
 
-Pelanggan FoodGo kesulitan menemukan alamat IP server kurir yang **dinamis** (kurir berpindah lokasi/jaringan, IP-nya sering berubah). FoodGo butuh cara memetakan **ID Kurir** (identitas tetap) ke **alamat IP terkininya** tanpa server pusat tunggal yang jadi bottleneck/single point of failure.
+Tabel pusat dengan flat naming memang mudah dicari, tetapi semua pembaruan dan lookup bergantung pada server pusat. DNS memberi nama yang lebih mudah diingat dan mendukung cache serta delegasi, tetapi untuk kasus ini tetap memerlukan pengelolaan zona dan pembaruan record; cache juga dapat menyimpan alamat lama sampai TTL berakhir. DHT cocok untuk pemetaan terdistribusi yang diperbarui dan dicari oleh banyak node tanpa satu koordinator tunggal. Simulasi ini menunjukkan prinsip pembagian tanggung jawab; implementasi produksi tetap perlu menangani replikasi, kegagalan node, autentikasi, dan propagasi pembaruan IP.
 
-## Tugas Kelompok
+## Ring Chord dari simulasi
 
-Implementasikan **simulasi Chord DHT** sederhana (single-process, tidak perlu jaringan sungguhan — cukup simulasi struktur data & algoritma di satu program Python) yang memetakan ID Kurir ke alamat IP mereka.
+Hash memakai SHA-1 yang dipotong modulo 256 (`m=8`). Setiap node bertanggung jawab atas key dengan hash setelah predecessor-nya sampai dengan ID node tersebut (interval `(predecessor, node]`).
 
-Konsep yang harus terlihat jalan dalam simulasi kalian:
-1. **Consistent hashing**: ID Kurir dan ID Node di-hash ke ruang angka yang sama (mis. 0–255 untuk kesederhanaan, `m=8` bit).
-2. **Ring topology**: node-node diurutkan melingkar berdasarkan hasil hash-nya.
-3. **Lookup**: fungsi `lookup(kurir_id)` yang menemukan node mana yang bertanggung jawab menyimpan mapping ID Kurir tersebut → alamat IP-nya (aturan Chord: node dengan ID hash **terkecil yang lebih besar atau sama dengan** hash key, disebut *successor*).
-4. **Perubahan topologi**: simulasikan minimal satu node baru bergabung (`join`) atau satu node keluar (`leave`), tunjukkan bagaimana mapping berpindah tanggung jawab ke node lain.
-
-Skeleton disediakan di `src/chord_simulation.py` dengan fungsi hashing dan struktur ring sudah ada — bagian `lookup()`, `join()`, dan `leave()` sengaja dikosongkan.
-
-### Cara Menjalankan
-
-```bash
-python3 src/chord_simulation.py
+```mermaid
+flowchart LR
+  n35["node-medan-67<br/>ID 35<br/>kurir-002 (28)"] --> n40["node-bandung-1<br/>ID 40"]
+  n40 --> n102["node-jakarta-2<br/>ID 102<br/>kurir-001 (50)"]
+  n102 --> n136["node-surabaya-1<br/>ID 136<br/>kurir-003 (132)"]
+  n136 --> n177["node-jakarta-1<br/>ID 177"]
+  n177 --> n35
 ```
 
-## Tugas Analisis (`README.md`)
+Diagram menggambarkan keadaan setelah node Medan bergabung dan sebelum node Jakarta-2 keluar. Kurir-002 berpindah dari node 40 ke node 35 pada saat join. Ring kembali setelah leave terdiri atas node 35, 40, 136, dan 177. Hash lengkap key: `kurir-001=50`, `kurir-002=28`, `kurir-003=132`.
 
-1. Jelaskan **kenapa DHT/Chord** lebih cocok untuk kasus ini dibanding **flat naming sederhana** (mis. tabel pusat ID→IP) atau **DNS konvensional** — kaitkan dengan sifat "IP kurir sering berubah" dan kebutuhan tanpa titik gagal tunggal.
-2. Gambarkan (boleh pakai Mermaid, lihat Tugas 2) ring topology dari simulasi kalian, tandai node mana yang bertanggung jawab atas ID Kurir mana.
-3. Jelaskan apa yang terjadi pada mapping saat sebuah node **keluar** dari ring (siapa yang mengambil alih tanggung jawabnya) — dukung dengan output program.
+## Penelusuran manual `lookup("kurir-001")`
 
-## Struktur Submission
+1. Program menghitung `hash_id("kurir-001") = 50` pada ruang 0–255.
+2. Sebelum leave, node tersusun berdasarkan ID: 35, 40, 102, 136, 177.
+3. `find_successor(50)` memeriksa ID terurut dan mengambil ID pertama yang ≥ 50, yaitu 102.
+4. Record hash 50 berisi `("kurir-001", "192.168.1.10")`; lookup mengembalikan `192.168.1.10`.
+5. Setelah node 102 keluar, successor pertama ≥ 50 adalah 136. Tanggung jawab berpindah ke node 136, sementara lookup tetap mengembalikan IP kurir yang sama.
 
-```
-tugas-06-penamaan-dht/
-├── README.md      # Analisis + diagram ring
-├── JURNAL.md
-├── src/
-│   └── chord_simulation.py
-└── bukti/          # Output program (screenshot/log) untuk skenario join & leave
-```
+Contoh wrap-around: bila hash key lebih besar daripada ID node terbesar, successor adalah node ber-ID terkecil.
 
-## Rubrik Penilaian (Tugas 6)
+## Perubahan topologi
 
-| Komponen | Bobot | Kriteria |
-|---|---|---|
-| Implementasi lookup/join/leave benar | 35% | Consistent hashing & successor lookup sesuai aturan Chord |
-| Bukti perubahan topologi (join/leave) | 25% | Output menunjukkan mapping berpindah dengan benar |
-| Analisis kenapa DHT vs flat naming/DNS | 25% | Argumen spesifik ke kasus IP kurir dinamis, bukan definisi umum |
-| Proses & kontribusi kelompok | 15% | `JURNAL.md`, commit history |
-
-## Batasan Penggunaan AI (Level 2)
-
-Kebijakan **Level 2 (AI Assisted Idea Generation & Structuring)** berlaku — lihat [`../RUBRIK-UMUM.md`](../RUBRIK-UMUM.md). Boleh bertanya konsep umum consistent hashing/Chord ke AI; **tidak boleh** meminta AI menuliskan isi `# TODO` di `src/chord_simulation.py` (`find_successor`, `join`, `leave`, dst). Catat pemakaian AI di "Log Penggunaan AI" pada `JURNAL.md`.
-
-- `README.md` wajib menelusuri manual (langkah demi langkah) bagaimana `lookup()` menemukan successor untuk salah satu ID Kurir contoh yang dipakai di `chord_simulation.py` — bukan cuma menempelkan output program.
+Node baru `node-medan-67` memiliki ID 35. Sebelum bergabung, hash kurir-002 (28) ditangani node 40. Setelah join, successor pertama ≥ 28 adalah node 35, maka tanggung jawab berpindah dari 40 ke 35. Selanjutnya node `node-jakarta-2` (ID 102) keluar. Key kurir-001 (50) yang sebelumnya ditangani node 102 kini menjadi tanggung jawab successor berikutnya, node 136.
