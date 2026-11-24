@@ -31,6 +31,13 @@ Pemerintah ingin membangun **Sistem Data Kependudukan** (nama, NIK, alamat, data
 
 5. Alternatif yang tidak dipilih oleh kelompok kami adalah Public Cloud murni. Model ini memiliki keunggulan dalam skalabilitas karena kapasitas resource dapat ditingkatkan sesuai kebutuhan. Namun, Sistem Data Kependudukan membutuhkan kontrol langsung pemerintah terhadap infrastruktur yang menyimpan data sensitif warga. Penggunaan Public Cloud murni memerlukan pengaturan dan pengawasan tambahan terkait pengelolaan infrastruktur, lokasi penyimpanan data, serta akses penyedia layanan. Oleh karena itu, kelompok kami lebih memilih Private Cloud karena memberikan kontrol pengelolaan infrastruktur yang lebih besar dan dapat disesuaikan dengan kebijakan keamanan pemerintah, meskipun membutuhkan investasi serta pengelolaan kapasitas secara mandiri.
 
+   ## Analisis Trade-off
+
+* **Biaya:** Membutuhkan biaya investasi awal  dan pemeliharaan  yang tinggi karena pengadaan server, pusat data, dan pengelolaan infrastruktur dilakukan secara mandiri oleh pemerintah.
+* **Skalabilitas:** Tetap mendukung elastisitas dalam batas kapasitas pusat data pemerintah, namun tidak sefleksibel Public Cloud jika terjadi lonjakan akses ekstrem yang melampaui kapasitas fisik yang tersedia.
+* **Kontrol Infrastruktur:** Memberikan kendali penuh negara atas lokasi fisik data, keamanan jaringan, dan kepatuhan terhadap UU Nomor 27 Tahun 2022 tentang Perlindungan Data Pribadi (UU PDP).
+* **Risiko *Vendor Lock-in*:** Relatif lebih rendah apabila dibangun menggunakan platform *open-source*, namun tetap perlu meminimalkan ketergantungan pada perangkat keras maupun lisensi perangkat lunak vendor tertentu.
+
 ## Bukti & Diagram Arsitektur
 ![Arsitektur Cloud Delivery dan Deployment](bukti/arsitektur-cloud-deployment.png)
 
