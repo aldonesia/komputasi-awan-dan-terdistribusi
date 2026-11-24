@@ -42,3 +42,27 @@ Kebijakan **Level 2 (AI Assisted Idea Generation & Structuring)** berlaku — li
 
 - Jawaban yang terasa seperti "template" (bisa dipakai untuk sistem cloud apa saja tanpa menyebut spesifik kependudukan/data pribadi/regulasi) akan dinilai rendah pada komponen ketepatan rekomendasi.
 - `README.md` wajib membahas minimal satu skenario tandingan yang kalian buat sendiri (mis. "bagaimana jika instansi daerah tidak punya infrastruktur private cloud sendiri?") beserta jawabannya.
+
+
+## Analisis Kami
+#### 1. Rekomendasikan Deployment Model
+Disini kami memilih Hybrid cloud sebagai deployment model untuk Sistem Data Kependudukan karena dari case yang diberikan dan penjelasannya itu perlu kombinasi antara kerahasiaan data negara, aksesibilitas oleh ribuan instansi dibawahnya dan skalabilitas saat ada lonjakan traffic misal saat ada pemilu atau hal lain. Dengan model deployment hybrid komponen yang paling rahasia/sensitif (Data pribadi rakyat) seperti NIK,  alamat dan data biometrik yang dilindungi UU Perlindungan Data Pribadi akan berada di bagian private cloud dibawah pengawasan negara secara langsung,sedangkan ribuan instansi dibawahnya yang perlu akses ke data pribadi seperti dukcapil, kepolisian dan lain-lain tetap bisa akses melalui jalur yang aman dan khusus tanpa harus menyentuh langsung ke database intinya. Sementara itu, public cloud digunakan secara terbatas pada portal layanan publik (yang tidak menyimpan data inti secara permanen) agar mampu menampung lonjakan akses ekstrem tanpa membebani infrastruktur inti negara.
+
+Berikut alasan berdasarkan karakteristik NIST:
+**a. On-Demand Self Service:** Saat trafik tinggi (ada pemilu atau pembukaan bank baru dll), tim IT negara bisa langsung menambahkan node ke bagian yang perlu tambahan sumber daya (tanpa harus nunggu upgrade server fisiknya). Agar kerahasiaannya tetap terjaga hanya orang / administrator pemerintah yang boleh mengubah-ubah alokasi sumber dayanya.
+**b. Broad Network Access:** Ribuan instansi itu tersebar dibanyak wilayah indonesia dan banyak jenisnya, semua instansi ini bisa akses ke server jaringan pemerintahan yang harus melalui jaringan terenkripsi sehingga data warga negara itu tetap aman dan tidak terekspos ke publik .
+**c. Resource Pooling:** Sumber daya server itu terpusat daripada setiap instansi punya servernya sendiri, kemudian agar bisa dibagi secara dinamis ke instansi yang sedang tinggi trafiknya dan ini lebih aman karena yang perlu diamankan itu tidak banyak hanya server pusat yang terisolasi dari publik (jadi tidak perlu jaga server dari ribuan instansi).
+**d. Rapid Elasticity:** Saat beban suatu instansi membesar untuuk akses ke komponen khusus misal data orang yang melakukan pemilu sistem dapat melakukan penyesuaian otomatis pada komponen yang tinggi trafiknya (khusus yang bukan database inti agar kerahasiaan tetap terjaga) sehingga server tidak mengalami downtime atau mati dan kembalikan ke penggunaan normal saat kondisi mereda.
+**e. Measured Service:** Setiap pemakaian sumber daya saat  trafik meningkat dan jumlah permintaan verifikasi API oleh masing-masing instansi maupun bank dicatat otomatis secara terukur untuk pengaturan kuota dan efisiensi biaya. Pencatatan  akses secara rinci tersebut sekaligus berfungsi sebagai jejak audit sesuai ketentuan UU PDP guna memantau pihak mana yang mengakses data kependudukan serta mendeteksi anomali atau potensi kebocoran data secara cepat.
+
+#### 2. Rekomendasikan Service Model
+Karena dipenjelasan case awal Sistem Data Kependudukan ini harus punya kerahasiaan yang tinggu dan kebutuhan skalabilitasnya beda kami tidak memakai 1 service model saja, oleh karena itu kami berpikir untuk menggunakan 2 model yaotu IaaS dan PaaS yaitu:
+
+**a. IaaS (Infrastructure as a Service)** Untuk Komponen Rahasia (Database Inti NIK & Biometrik): Untuk menyimpan data yang sensitif seperti NIK, alamat, dan data biometrik warga negara, kami memilih IaaS di atas private cloud milik negara. Dengan IaaS, tim IT negara memegang kendali penuh mulai dari sistem operasi, konfigurasi jaringan, firewall, hingga enkripsi penyimpanannya agar tetap patuh pada UU Perlindungan Data Pribadi tanpa campur tangan pihak luar.
+
+**b. PaaS (Platform as a Service)** Untuk Aplikasi Layanan Instansi, API, Verifikasi KYC, dan Portal Publik: Untuk lapisan aplikasi dan gerbang layanan seperti API Gateway verifikasi KYC bagi bank dan kepolisian, web operasional untuk banyak intansi seperti Dukcapil daerah, serta portal publik pengecekan status saat musim pemilu atau pendaftaran SIM dan lian-lain kami memilih PaaS. Dengan PaaS, tim pengembang pemerintah bisa fokus mengembangkan dan mengamankan aplikasinya sendiri, sementara urusan runtime dan penyesuaian kapasitas otomatis saat trafik melonjak ditangani oleh platform tanpa harus mengatur ulang sumber daya.
+
+#### 3. Jelaskan minimal 2 risiko spesifik
+
+
+#### 4. Bandingkan singkat dengan satu alternatif yang kalian tolak 
