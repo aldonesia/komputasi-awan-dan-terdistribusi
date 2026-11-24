@@ -68,6 +68,38 @@ Karena dipenjelasan case awal Sistem Data Kependudukan ini harus punya kerahasia
 **b. PaaS (Platform as a Service)** Untuk Aplikasi Layanan Instansi, API, Verifikasi KYC, dan Portal Publik: Untuk lapisan aplikasi dan gerbang layanan seperti API Gateway verifikasi KYC bagi bank dan kepolisian, web operasional untuk banyak intansi seperti Dukcapil daerah, serta portal publik pengecekan status saat musim pemilu atau pendaftaran SIM dan lian-lain kami memilih PaaS. Dengan PaaS, tim pengembang pemerintah bisa fokus mengembangkan dan mengamankan aplikasinya sendiri, sementara urusan runtime dan penyesuaian kapasitas otomatis saat trafik melonjak ditangani oleh platform tanpa harus mengatur ulang sumber daya.
 
 #### 3. Jelaskan minimal 2 risiko spesifik
+**Risiko 1: Kebocoran data pribadi lewat jalur antara private dan public segment**
 
+Portal publik berjalan di *public cloud* (PaaS), sedangkan data inti ada di *private cloud* (IaaS). Karena itu ada jalur komunikasi antara keduanya, dan jalur itu bisa menjadi titik masuk serangan. Contohnya *SQL injection* atau API *abuse* lewat portal publik yang menembus sampai ke *database* NIK dan biometrik. Data biometrik tidak bisa diganti seperti password. Jika bocor, dampaknya permanen bagi warga, dan pemerintah bisa dianggap lalai menurut UU PDP.
+
+**Mitigasi:**
+Portal publik tidak boleh *query* langsung ke *database* inti. Semua permintaan lewat API *Gateway* di zona perantara (DMZ), dengan hak akses minimum dan hanya mengembalikan data terbatas (misalnya status "terverifikasi" atau "belum").
+Seluruh jalur antar-segment memakai koneksi privat terenkripsi (VPN *site-to-site* atau *private link*) dengan mutual TLS, bukan internet publik.
+Data yang diproses di *public cloud* bersifat *stateless*, tidak disimpan permanen, dan data sensitif ditokenisasi atau di-*masking*.
+Pasang WAF dan rate limiting di gerbang publik, serta audit log dari *Measured Service* dipantau untuk mendeteksi anomali akses.
+
+**Risiko 2: Inkonsistensi dan keterlambatan sinkronisasi data antar-segment**
+
+Pada *Hybrid Cloud*, sebagian data (*cache*, status layanan, hasil verifikasi) berada di dua tempat. Saat lonjakan akses seperti pemilu, atau saat koneksi ke *private cloud* terganggu, data di portal publik bisa berbeda dari data inti. Akibatnya, warga bisa melihat status kependudukan yang salah. Bank bisa gagal atau salah melakukan KYC karena data lama. Perbedaan data kependudukan juga bisa menimbulkan masalah hukum dan administrasi, misalnya hak pilih.
+
+**Mitigasi:**
+*Database* inti di *private cloud* ditetapkan sebagai *single source of truth*. Data di *public cloud* hanya *cache read-only* dengan masa berlaku (TTL) pendek.
+Perubahan data disinkronkan melalui antrean pesan (*message queue*) dengan mekanisme *retry* dan *idempotency*, sehingga tidak ada data hilang atau ganda saat koneksi putus.
+Untuk verifikasi kritis seperti KYC bank, selalu validasi langsung ke data inti lewat API *Gateway*.
+Siapkan monitoring selisih data dan prosedur rekonsiliasi berkala.
 
 #### 4. Bandingkan singkat dengan satu alternatif yang kalian tolak 
+**Alternatif yang ditolak: Public Cloud murni**
+
+*Public Cloud* unggul di tiga karakteristik NIST, yaitu *rapid elasticity, on-demand self-service*, dan *measured service* yang efisien biaya. Lonjakan akses saat pemilu atau pendaftaran sekolah sebenarnya paling mudah ditangani di sini. Namun kami menolaknya karena tiga alasan, antara lain:
+1. Bertentangan dengan syarat studi kasus. Kasus menyebut data tidak boleh berada di infrastruktur yang tidak terkendali penuh oleh negara. Di *Public Cloud*, *resource pooling* berarti sumber daya fisik dipakai bersama banyak pelanggan (*multi-tenant*) dan dikelola penyedia. Negara tidak punya kendali penuh atas *server* fisik, jaringan, maupun siapa yang memiliki akses administratif di level infrastruktur.
+2. Risiko hukum dan kedaulatan data. NIK, alamat, dan biometrik adalah data pribadi sensitif dalam UU PDP. Menyimpannya di infrastruktur pihak ketiga, apalagi yang bisa tunduk pada hukum negara lain, meningkatkan risiko akses oleh pihak yang tidak berwenang dan menyulitkan penegakan tanggung jawab jika terjadi kebocoran.
+3. Dampak kebocoran terlalu besar. Jika data seluruh penduduk berada di lingkungan *multi-tenant*, satu celah isolasi antar-*tenant* cukup untuk membuka data nasional sekaligus. Data biometrik yang bocor juga tidak bisa "diganti".
+
+Karena itu, *Hybrid Cloud* dipilih sebagai jalan tengah. Data rahasia tetap di *private cloud*, dan sifat elastis *Public Cloud* dipakai hanya untuk komponen yang tidak menyimpan data inti.
+
+#### Skenario Tandingan 
+Bagaimana jika instansi daerah tidak punya infrastruktur *private cloud* sendiri?
+
+Jawaban: Instansi daerah tidak perlu membangun *private cloud* sendiri. Sesuai prinsip *resource pooling, private cloud* dibangun terpusat oleh pemerintah pusat (misalnya di pusat data nasional) dan dipakai bersama seluruh instansi lewat jaringan pemerintah yang terenkripsi (*broad network access*). Instansi daerah cukup memakai aplikasi *web* operasional dan API yang tersedia sebagai PaaS, dengan akses terbatas sesuai peran (*role-based access control*) dan autentikasi berlapis. Data tidak disimpan di perangkat atau server daerah, sehingga risiko kebocoran di tingkat daerah yang keamanannya lebih lemah ikut berkurang. Konsekuensinya, jaringan daerah menjadi titik kritis sehingga perlu koneksi cadangan dan prosedur akses darurat saat jaringan terganggu.
+
