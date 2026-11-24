@@ -53,8 +53,11 @@ Berikut alasan berdasarkan karakteristik NIST:
 **a. On-Demand Self Service:** Saat trafik tinggi (ada pemilu atau pembukaan bank baru dll), tim IT negara bisa langsung menambahkan node ke bagian yang perlu tambahan sumber daya (tanpa harus nunggu upgrade server fisiknya). Agar kerahasiaannya tetap terjaga hanya orang / administrator pemerintah yang boleh mengubah-ubah alokasi sumber dayanya.
 <br>
 **b. Broad Network Access:** Ribuan instansi itu tersebar dibanyak wilayah indonesia dan banyak jenisnya, semua instansi ini bisa akses ke server jaringan pemerintahan yang harus melalui jaringan terenkripsi sehingga data warga negara itu tetap aman dan tidak terekspos ke publik .
+<br>
 **c. Resource Pooling:** Sumber daya server itu terpusat daripada setiap instansi punya servernya sendiri, kemudian agar bisa dibagi secara dinamis ke instansi yang sedang tinggi trafiknya dan ini lebih aman karena yang perlu diamankan itu tidak banyak hanya server pusat yang terisolasi dari publik (jadi tidak perlu jaga server dari ribuan instansi).
+<br>
 **d. Rapid Elasticity:** Saat beban suatu instansi membesar untuuk akses ke komponen khusus misal data orang yang melakukan pemilu sistem dapat melakukan penyesuaian otomatis pada komponen yang tinggi trafiknya (khusus yang bukan database inti agar kerahasiaan tetap terjaga) sehingga server tidak mengalami downtime atau mati dan kembalikan ke penggunaan normal saat kondisi mereda.
+<br>
 **e. Measured Service:** Setiap pemakaian sumber daya saat  trafik meningkat dan jumlah permintaan verifikasi API oleh masing-masing instansi maupun bank dicatat otomatis secara terukur untuk pengaturan kuota dan efisiensi biaya. Pencatatan  akses secara rinci tersebut sekaligus berfungsi sebagai jejak audit sesuai ketentuan UU PDP guna memantau pihak mana yang mengakses data kependudukan serta mendeteksi anomali atau potensi kebocoran data secara cepat.
 
 #### 2. Rekomendasikan Service Model
