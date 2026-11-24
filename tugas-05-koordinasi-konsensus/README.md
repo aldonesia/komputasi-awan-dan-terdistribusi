@@ -2,6 +2,9 @@
 
 **Materi terkait:** Physical/Logical Clock, Election Algorithm (Bully/Raft).
 
+## Analisis
+Election Algorithm selalu memilih node ber-ID tertinggi yang masih hidup karena sebuah node hanya mau mundur kalau ada node lebih besar yang menjawab OK. Proses ini naik terus sampai ketemu node terbesar yang masih aktif, dan node yan paling besar itu menjadi leader. Pada kasus FoodGo, leader membuat urutan pesanan ditentukan di satu tempat saja, sehingga tidak lagi bergantung pada jam tiap server dan pesanan tidak diproses doubel. Namun, bisa muncul dua leader saat jaringan terputus, dan tidak menjamin data antrean ikut aman. Aloritma ini cukup untuk simulasi belajar dan cluster kecil yang jaringannya stabil.
+
 ## Studi Kasus
 
 Terjadi konflik urutan waktu pada pesanan FoodGo (dua server mencatat urutan pesanan berbeda karena jam tidak sinkron), dan sistem membutuhkan satu **"Node Leader"** untuk mengelola antrean pesanan pusat agar tidak terjadi konflik pemrosesan ganda.
