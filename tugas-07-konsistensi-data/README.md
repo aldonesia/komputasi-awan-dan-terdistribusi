@@ -14,6 +14,74 @@ Data saldo *e-wallet* pelanggan FoodGo berbeda antara server wilayah **Jakarta**
 2. Jika kalian menyimpulkan Eventual Consistency saja **tidak cukup** untuk skenario ini, usulkan pendekatan **Client-Centric Consistency** yang relevan (mis. *Read-Your-Writes*: pelanggan yang baru top-up harus selalu melihat saldo terbarunya sendiri, walau replika lain belum sinkron).
 3. Gambarkan **diagram alir urutan (sequence diagram)** yang menunjukkan operasi read/write antara pelanggan, server Jakarta, server Bandung, dan proses replikasi — untuk skenario **tanpa** jaminan konsistensi (bug terjadi) DAN skenario **dengan** solusi yang kalian usulkan (bug teratasi). Pakai Mermaid (`sequenceDiagram`) di `README.md` — lihat contoh cara pakai di Tugas 2.
 
+
+### jawaban — Analisis
+1.Sistem e-wallet FoodGo tidak harus menggunakan Sequential Consistency pada semua server.Model Eventual Consistency lebih masuk akal karena memungkinkan replikasi data antar server (Jakarta dan Bandung) berjalan secara asinkron tanpa memblokir sistem utama, sehingga performa tetap optimal.
+Tetapi, dilihat dari dampak bisnisnya, kasus saldo e-wallet sangat sensitif dan jauh berbeda dengan sekadar "jumlah like" di media sosial. Mengandalkan Eventual Consistency saja berisiko menimbulkan stale read (membaca saldo lama). Jika pelanggan berpindah server dalam hitungan detik setelah top-up, transaksi pembelian bisa ditolak karena saldo di server tujuan belum ter-update, yang berakibat fatal pada kepercayaan pengguna dan kerugian bisnis.
+
+
+2.Karena Eventual Consistency murni tidak cukup, kami mengusulkan penerapan Client-Centric Consistency menggunakan model Read-Your-Writes.
+Pendekatan ini memastikan pelanggan selalu melihat saldo terbarunya sendiri. Klien akan melacak versi data dari transaksi terakhirnya. Jika klien mengakses server yang versi datanya masih tertinggal (stale), sistem akan menahan respons (polling) hingga replikasi selesai dan versinya sesuai, barulah saldo ditampilkan.
+
+3.
+
+#### A. Skenario Tanpa Jaminan Konsistensi (Terjadi Bug)
+
+```mermaid
+sequenceDiagram
+    participant C as Pelanggan (Client)
+    participant J as Server Jakarta
+    participant B as Server Bandung
+
+    C->>J: 1. Top-up Saldo (mis. Rp50.000)
+    J-->>C: 2. Transaksi Sukses & Saldo tersimpan (Versi 1)
+    
+    note over J,B: Proses replikasi berjalan lambat (Tertunda 2 detik)
+    J-x B: 3. Replikasi data tertunda
+    
+    C->>B: 4. Pesan makanan (Baca saldo dari Bandung)
+    B-->>C: 5. Mengembalikan saldo Rp0 (Stale Read)
+    
+    note over C: BUG: Saldo terbaca Rp0. Transaksi ditolak!
+    
+    note over J,B: Beberapa saat kemudian...
+    B-->>B: 6. Replikasi dari Jakarta akhirnya masuk
+
+```
+
+#### B. Skenario Dengan Solusi (Read-Your-Writes)
+
+```mermaid
+sequenceDiagram
+    participant C as Pelanggan (Client)
+    participant J as Server Jakarta
+    participant B as Server Bandung
+
+    note over C,B: Saldo Awal: Rp50.000 (Versi 1)
+    
+    C->>J: 1. Top-up Tambahan (Rp20.000)
+    note over J: Saldo menjadi Rp70.000 (Versi 2)
+    J-->>C: 2. Transaksi Sukses (Client menyimpan target minimal: Versi >= 2)
+    
+    note over J,B: Proses replikasi berjalan lambat (Tertunda 2 detik)
+    J-x B: 3. Replikasi data tertunda
+    
+    C->>B: 4. Pesan makanan (Meminta data dengan syarat Versi >= 2)
+    
+    note over B: Sistem mendeteksi Bandung masih Versi 1 (Stale)
+    note over B: Sistem menahan proses (Polling / Menunggu sinkronisasi)
+    
+    note over J,B: Replikasi akhirnya tiba dari Jakarta
+    B-->>B: 5. Bandung menerima update (Saldo = Rp70.000, Versi = 2)
+    
+    note over B: Versi terpenuhi. Data aman dibaca.
+    B-->>C: 6. Mengembalikan saldo Rp70.000 (Read-Your-Writes)
+    
+    note over C: SOLUSI: Saldo terbaca akurat. Transaksi berhasil diproses!
+```
+
+---
+
 ### Bagian 2 — Simulasi (opsional, nilai tambah)
 
 Skeleton `src/replica_simulation.py` mensimulasikan dua replika (Jakarta & Bandung) dengan delay replikasi buatan. Lengkapi TODO untuk:

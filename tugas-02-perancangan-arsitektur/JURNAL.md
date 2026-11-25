@@ -1,9 +1,10 @@
 # Jurnal Proses — Tugas 2
 
-## [Tanggal]
-- Opsi arsitektur yang dipertimbangkan: ...
-- Kenapa akhirnya pilih [SOA/Pub-Sub]: ...
-- Revisi diagram (versi 1 → versi 2, apa yang berubah dan kenapa): ...
+## [28/09/2026]
+- Opsi arsitektur yang dipertimbangkan: kami memutuskan memakai Kombinasi Service-Oriented Architecture (SOA) dan Publish-Subscribe (Event-Driven).
+- Kenapa akhirnya pilih [SOA/Pub-Sub]:  Karena kebutuhan tiap modul di FoodGo itu beda-beda. Interaksi pemesanan dan pembayaran membutuhkan kepastian validasi yang instan atau real-time sehingga pendekatan SOA yang sinkron lebih tepat. Tapi buat urusan nyari kurir dan notif ke resto, bakal lebih optimal kalau dijalanin di background secara asinkron pakai Pub-Sub
+- Revisi diagram (versi 1 → versi 2, apa yang berubah dan kenapa): Sejak awal diskusi, kelompok kami sudah sepakat untuk langsung merancang arsitektur kombinasi. menggunakan SOA, akan berisiko menyebabkan antrean atau bottleneck pada layanan kurir. Sebaliknya, jika memaksakan Publish-Subscribe murni untuk semua layanan, sangat berisiko memunculkan masalah Eventual Consistency pada modul pembayaran, di mana pelanggan bisa mengira pesanan sukses padahal pembayaran gagal di latar belakang.
+
 
 ## Log Penggunaan AI (Level 2)
 
@@ -11,4 +12,5 @@
 
 | Tanggal | Tool AI | Prompt yang diberikan | Ringkasan saran/ide AI | Bagaimana diolah jadi tulisan/kode sendiri |
 |---|---|---|---|---|
+| 28| Gemini| jelaskan apa itu Service-Oriented Architecture (SOA) atau Publish-Subscribe kapan di gunakan masing masing atau di kombinasi| Ai memberikan penjelasan  Service-Oriented Architecture (SOA) adalah pendekatan arsitektur perangkat lunak di mana komponen-komponen sistem (layanan) berkomunikasi satu sama lain melalui jaringan. SOA umumnya berfokus pada model komunikasi request-response yang sinkron (seperti menggunakan REST API, gRPC, atau SOAP), di mana satu layanan meminta data ke layanan lain dan menunggu balasannya. Tujuannya adalah membangun layanan yang reusable, terdistribusi, dan memiliki kontrak antarmuka (API) yang jelas dan Publish-Subscribe (Pub/Sub) adalah pola komunikasi pesan (messaging pattern) asinkron di mana pengirim pesan (Publisher) tidak mengirim pesan langsung ke penerima spesifik. Pesan dikirim ke sebuah Message Broker (seperti Apache Kafka, RabbitMQ, atau Redis) dan dikategorikan dalam suatu topic atau channel. Penerima (Subscriber) yang tertarik pada topik tersebut akan otomatis menerima dan memproses pesan tanpa pengirim mengetahui keberadaan mereka., Kapan Menggunakan SOA yaitu Membutuhkan respons instan (Synchronous),dan Konsistensi data ketat,Alur eksekusi sekuensial.Kapan Menggunakan Pub/Sub yaitu  Pemrosesan latar belakang (Asynchronous), Arsitektur berbasis peristiwa (Event-Driven), dan Skalabilitas & Broadcast (One-to-Many). Kapan harus di Kombinasi Dalam sistem modern berskala besar (seperti microservices), SOA dan Pub/Sub hampir selalu dikombinasikan. dan memberikan contoh kasus kombinasi yaitu Contoh Kasus Kombinasi (Sistem E-Commerce), Fase SOA (Synchronous): Saat pengguna menekan "Checkout", Order Service melakukan panggilan API langsung ke Payment Service dan Inventory Service untuk memotong saldo serta memvalidasi stok. Pengguna harus segera melihat pesan "Pembayaran Berhasil" di layar (SOA memastikan respons langsung). dan Fase Pub/Sub (Asynchronous): Setelah status pesanan menjadi valid, Order Service menjadi Publisher dan mengirim event PaymentSuccess ke Message Broker.| di gunakan untuk membantu mamahami secara garis besar tentang materi tersebut untuk m mengadaptasi ide kombinasi tersebut ke dalam studi kasus FoodGo |
 | ... | ... | ... | ... | ... |

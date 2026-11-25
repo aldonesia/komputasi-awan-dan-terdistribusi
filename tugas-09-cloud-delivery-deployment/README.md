@@ -18,6 +18,29 @@ Pemerintah ingin membangun **Sistem Data Kependudukan** (nama, NIK, alamat, data
 3. Jelaskan **minimal 2 risiko spesifik** dari pilihan kalian dan mitigasinya (mis. jika Hybrid Cloud dipilih: risiko sinkronisasi data antara private & public segment).
 4. Bandingkan singkat dengan **satu alternatif yang kalian tolak** — kenapa alternatif itu kurang tepat (mis. kenapa Public Cloud murni ditolak, atau kenapa Private Cloud murni dianggap kurang skalabel).
 
+## Jawaban Kelompok
+1. Berdasarkan hasil analisis kelompok kami, Private Cloud merupakan Cloud Deployment Model yang direkomendasikan untuk Sistem Data Kependudukan. Model ini dipilih karena sistem menyimpan data sensitif warga, seperti nama, NIK, alamat, dan biometrik, yang membutuhkan tingkat kerahasiaan serta kontrol tinggi. Private Cloud memungkinkan pemerintah mengelola infrastruktur, penyimpanan, jaringan, dan keamanan secara terpusat sesuai kebijakan pemerintah dan ketentuan UU Nomor 27 Tahun 2022 tentang Perlindungan Data Pribadi (UU PDP). Berdasarkan karakteristik NIST SP 800-145, Private Cloud tetap mendukung on-demand self-service melalui penyediaan resource sesuai kebutuhan layanan, broad network access melalui akses jaringan aman bagi instansi berwenang, dan resource pooling melalui penggunaan resource komputasi secara bersama. Rapid elasticity diterapkan dengan menambah kapasitas server saat terjadi lonjakan permintaan, seperti pada periode pemilu atau pendaftaran sekolah. Sementara itu, measured service digunakan untuk memantau penggunaan CPU, memori, storage, dan trafik jaringan agar kapasitas dapat dikelola secara efisien. Dengan demikian, kelompok kami menilai Private Cloud dapat menjaga kontrol data sekaligus mendukung skalabilitas, meskipun kapasitasnya tetap bergantung pada infrastruktur yang disediakan pemerintah.
+
+2. Untuk Cloud Service Model, kelompok kami merekomendasikan kombinasi Infrastructure as a Service (IaaS) dan Platform as a Service (PaaS) sesuai kebutuhan masing-masing komponen sistem. IaaS digunakan untuk database utama yang menyimpan NIK, alamat, identitas, dan data biometrik karena membutuhkan kontrol terhadap server, sistem operasi, storage, jaringan, serta keamanan. Dengan IaaS, pemerintah dapat mengatur konfigurasi dan pembatasan akses database sesuai kebijakan keamanan internal. Sementara itu, PaaS digunakan untuk aplikasi backend, API verifikasi identitas, dan layanan integrasi dengan instansi seperti Dukcapil daerah, kepolisian, dan bank. PaaS mempermudah pengembangan serta pemeliharaan aplikasi tanpa harus mengelola seluruh infrastruktur dasar. Adapun SaaS tidak digunakan sebagai model utama karena pemerintah membutuhkan kontrol lebih besar terhadap aplikasi dan pemrosesan data sensitif. SaaS masih dapat dimanfaatkan untuk aplikasi pendukung yang tidak mengelola data kependudukan sensitif.
+
+3. - Risiko 1 (Keterbatasan Kapasitas saat Lonjakan Akses): Kapasitas perangkat keras fisik Private Cloud yang terbatas berisiko menyebabkan downtime saat lonjakan akses verifikasi data pemilu, pendaftaran sekolah, atau KYC perbankan.
+       Mitigasi: Melakukan capacity planning dengan cadangan kapasitas berkala, menerapkan load balancing dan caching, serta memasang rate limiting pada API instansi.
+
+   - Risiko 2 (Kebocoran Data dan Penyalahgunaan Akses Internal): Kesalahan konfigurasi pada layer IaaS atau penyalahgunaan akses oleh oknum internal maupun ribuan instansi pengakses dapat membocorkan NIK dan data biometrik serta melanggar UU PDP.
+       Mitigasi: Menerapkan Zero Trust dan pembatasan akses berbasis peran (RBAC), enkripsi serta tokenisasi data biometrik menggunakan HSM, dan pemantauan audit log terpusat (SIEM). 
+
+5. Alternatif yang tidak dipilih oleh kelompok kami adalah Public Cloud murni. Model ini memiliki keunggulan dalam skalabilitas karena kapasitas resource dapat ditingkatkan sesuai kebutuhan. Namun, Sistem Data Kependudukan membutuhkan kontrol langsung pemerintah terhadap infrastruktur yang menyimpan data sensitif warga. Penggunaan Public Cloud murni memerlukan pengaturan dan pengawasan tambahan terkait pengelolaan infrastruktur, lokasi penyimpanan data, serta akses penyedia layanan. Oleh karena itu, kelompok kami lebih memilih Private Cloud karena memberikan kontrol pengelolaan infrastruktur yang lebih besar dan dapat disesuaikan dengan kebijakan keamanan pemerintah, meskipun membutuhkan investasi serta pengelolaan kapasitas secara mandiri.
+
+   ## Analisis Trade-off
+
+* **Biaya:** Membutuhkan biaya investasi awal  dan pemeliharaan  yang tinggi karena pengadaan server, pusat data, dan pengelolaan infrastruktur dilakukan secara mandiri oleh pemerintah.
+* **Skalabilitas:** Tetap mendukung elastisitas dalam batas kapasitas pusat data pemerintah, namun tidak sefleksibel Public Cloud jika terjadi lonjakan akses ekstrem yang melampaui kapasitas fisik yang tersedia.
+* **Kontrol Infrastruktur:** Memberikan kendali penuh negara atas lokasi fisik data, keamanan jaringan, dan kepatuhan terhadap UU Nomor 27 Tahun 2022 tentang Perlindungan Data Pribadi (UU PDP).
+* **Risiko *Vendor Lock-in*:** Relatif lebih rendah apabila dibangun menggunakan platform *open-source*, namun tetap perlu meminimalkan ketergantungan pada perangkat keras maupun lisensi perangkat lunak vendor tertentu.
+
+## Bukti & Diagram Arsitektur
+![Arsitektur Cloud Delivery dan Deployment](bukti/arsitektur-cloud-deployment.png)
+
 ## Struktur Submission
 
 ```

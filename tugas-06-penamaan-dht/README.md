@@ -30,6 +30,65 @@ python3 src/chord_simulation.py
 2. Gambarkan (boleh pakai Mermaid, lihat Tugas 2) ring topology dari simulasi kalian, tandai node mana yang bertanggung jawab atas ID Kurir mana.
 3. Jelaskan apa yang terjadi pada mapping saat sebuah node **keluar** dari ring (siapa yang mengambil alih tanggung jawabnya) — dukung dengan output program.
 
+## Jawab Tugas Analisis
+1. Perbandingan DHT/Chord dengan Metode Penamaan Lain
+
+Pada studi kasus FoodGo, sistem perlu menemukan alamat IP kurir berdasarkan ID Kurir yang bersifat tetap. Permasalahan muncul karena alamat IP kurir dapat berubah ketika kurir berpindah lokasi atau jaringan. Oleh karena itu, diperlukan mekanisme penamaan yang dapat menghubungkan ID Kurir dengan alamat IP terbaru.
+
+Terdapat beberapa pendekatan yang dapat digunakan:
+
+A. Flat Naming
+
+Flat naming menggunakan tabel pusat untuk menyimpan hubungan antara ID Kurir dan alamat IP. Pendekatan ini cukup sederhana, tetapi memiliki ketergantungan pada satu server pusat. Apabila server mengalami gangguan, proses pencarian alamat IP dapat ikut terganggu. Selain itu, server pusat berpotensi menjadi bottleneck ketika jumlah permintaan meningkat.
+
+B. DNS Konvensional
+
+DNS (Domain Name System) digunakan untuk menerjemahkan nama domain menjadi alamat IP. DNS memiliki mekanisme caching dan redundansi untuk meningkatkan ketersediaan layanan. Namun, DNS menggunakan struktur hierarkis dan tidak secara langsung menerapkan pembagian tanggung jawab penyimpanan key seperti pada Chord DHT.
+
+C. Distributed Hash Table (DHT) / Chord
+
+DHT merupakan mekanisme penyimpanan data terdistribusi yang memungkinkan beberapa node berbagi tanggung jawab dalam menyimpan dan menemukan data. Pada algoritma Chord, consistent hashing digunakan untuk menentukan posisi ID node dan ID Kurir dalam ruang identifier yang sama.
+
+Setiap mapping ID Kurir akan ditempatkan pada node yang menjadi successor dari hash ID Kurir tersebut. Ketika terdapat node baru yang bergabung atau node keluar, pembagian tanggung jawab penyimpanan dapat disesuaikan berdasarkan posisi node pada ring.
+
+Alasan penggunaan Chord DHT pada FoodGo:
+
+- Tidak bergantung pada satu server pusat untuk melakukan pencarian data.
+- Mapping ID Kurir dapat diperbarui ketika alamat IP kurir berubah.
+- Penyimpanan data didistribusikan ke beberapa node.
+- Perubahan jumlah node dapat ditangani melalui mekanisme join dan leave.
+- Dengan karakteristik tersebut, Chord DHT dapat menjadi pendekatan yang sesuai untuk kebutuhan penamaan terdistribusi pada FoodGo.
+
+2. Ring Topology
+```mermaid
+graph TD
+    N40((Node 40<br>bandung-1)) --> N102((Node 102<br>jakarta-2))
+    N102 --> N123((Node 123<br>medan-1))
+    N123 --> N136((Node 136<br>surabaya-1))
+    N136 --> N177((Node 177<br>jakarta-1))
+    N177 --> N40
+
+    K28[kurir-002<br>Hash: 28] -.->|Disimpan di| N40
+    K50[kurir-001<br>Hash: 50] -.->|Disimpan di| N102
+    K132[kurir-003<br>Hash: 132] -.->|Disimpan di| N136
+```
+
+3.Apa yang terjadi saat node keluar?
+
+
+Ketika sebuah node keluar, **semua key di rentang tanggung jawabnya diambil alih oleh
+successor-nya**, yaitu node berikutnya searah ring. Rentang node lain tetap sama.
+
+Di simulasi kami, `node-jakarta-1` (ID 177) keluar dari ring. Rentang tanggung jawabnya
+adalah (136, 177] dan successor-nya adalah Node 40 (karena ring berputar balik ke
+awal / *wrap-around*). Setelah itu, ring tinggal 4 node: 40, 102, 123, dan 136.
+Output programnya:
+
+![Output program skenario join dan leave](bukti/Bukti%20Penamaan.png)
+
+
+Perlu dicatat, log program mencetak ketiga kurir sebagai "diambil alih" saat node 177 keluar. Padahal hash ketiga kurir (28, 50, 132) berada di luar rentang tanggung jawab node 177, yaitu (136, 177], sehingga secara teori tidak ada key yang berpindah. Ketiganya sudah disimpan di node 40, 102, dan 136 sebelum node 177 keluar. Hasil lookup tetap sama, jadi data tidak hilang dan sistem tetap jalan tanpa server pusat. Ketidaksesuaian log ini juga sudah kami catat di JURNAL.md sebagai bagian yang perlu diperbaiki.
+
 ## Struktur Submission
 
 ```
