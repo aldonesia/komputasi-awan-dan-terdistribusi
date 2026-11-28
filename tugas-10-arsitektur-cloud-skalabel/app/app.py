@@ -7,22 +7,19 @@ import os
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-# TODO 1: ambil ID instance dari environment variable "INSTANCE_ID"
-# (akan di-set berbeda per service di docker-compose.yml).
 INSTANCE_ID = os.environ.get("INSTANCE_ID", "__BELUM_DI_SET__")
 
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Simulasikan sedikit beban kerja
+        # Simulasikan sedikit beban kerja (50 ms per request)
         time.sleep(0.05)
 
-        # TODO 2: kembalikan response berisi INSTANCE_ID, misalnya
-        # body: f"Ditangani oleh instance: {INSTANCE_ID}\n"
+        body = f"Ditangani oleh instance: {INSTANCE_ID}\n"
         self.send_response(200)
-        self.send_header("Content-Type", "text/plain")
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
-        self.wfile.write(b"TODO: kembalikan INSTANCE_ID di sini\n")
+        self.wfile.write(body.encode("utf-8"))
 
     def log_message(self, format, *args):
         # Log singkat ke stdout supaya kelihatan di `docker compose logs`
