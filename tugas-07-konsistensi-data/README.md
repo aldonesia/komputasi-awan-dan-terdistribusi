@@ -11,22 +11,21 @@ Data saldo _e-wallet_ pelanggan FoodGo berbeda antara server wilayah **Jakarta**
 ### Bagian 1 — Analisis (wajib)
 
 1.  Tentukan: apakah kasus ini **membutuhkan Sequential Consistency** (semua replika melihat urutan operasi yang sama) atau **cukup Eventual Consistency** (replika akan konsisten "pada akhirnya", boleh sementara berbeda)? Berikan argumen berbasis dampak bisnis (mis. kasus saldo _e-wallet_ jauh lebih sensitif dibanding kasus "jumlah like" di media sosial).
-    <br>
 
-        Sistem e-wallet FoodGo tidak dapat hanya bergantung pada Eventual Consistency, melainkan memerlukan konsistensi urutan seperti Sequential Consistency atau kombinasi Eventual Consistency dengan jaminan Client-Centric Consistency (seperti Read-Your-Writes). Hal ini dikarenakan data finansial memiliki dampak bisnis yang sangat sensitif. Sebagai contoh, keterlambatan replikasi antar-server dapat menyebabkan false rejection, seperti pengguna di Jakarta yang gagal bertransaksi di server Bandung sesaat setelah melakukan top-up. Masalah ini memicu kerugian finansial, penurunan kepercayaan pengguna, hingga lonjakan aduan layanan pelanggan. Tanpa konsistensi urutan operasi di seluruh replika, risiko double spending juga dapat terjadi jika saldo yang sama dipakai bersamaan di lokasi berbeda sebelum sinkronisasi rampung—sebuah dampak yang jauh lebih kritis dibandingkan ketidakcocokan data sementara pada fitur non-kritis seperti jumlah like media sosial.
 
-    </br>
+Sistem e-wallet FoodGo tidak dapat hanya bergantung pada Eventual Consistency, melainkan memerlukan konsistensi urutan seperti Sequential Consistency atau kombinasi Eventual Consistency dengan jaminan Client-Centric Consistency (seperti Read-Your-Writes). Hal ini dikarenakan data finansial memiliki dampak bisnis yang sangat sensitif. Sebagai contoh, keterlambatan replikasi antar-server dapat menyebabkan false rejection, seperti pengguna di Jakarta yang gagal bertransaksi di server Bandung sesaat setelah melakukan top-up. Masalah ini memicu kerugian finansial, penurunan kepercayaan pengguna, hingga lonjakan aduan layanan pelanggan. Tanpa konsistensi urutan operasi di seluruh replika, risiko double spending juga dapat terjadi jika saldo yang sama dipakai bersamaan di lokasi berbeda sebelum sinkronisasi rampung—sebuah dampak yang jauh lebih kritis dibandingkan ketidakcocokan data sementara pada fitur non-kritis seperti jumlah like media sosial.
+
+
 
 2.  Jika kalian menyimpulkan Eventual Consistency saja **tidak cukup** untuk skenario ini, usulkan pendekatan **Client-Centric Consistency** yang relevan (mis. _Read-Your-Writes_: pelanggan yang baru top-up harus selalu melihat saldo terbarunya sendiri, walau replika lain belum sinkron).
-    <br>
+    
+Pendekatan Client-Centric Consistency yang ideal untuk kasus ini adalah Read-Your-Writes Consistency serta opsi Monotonic Reads, yang memastikan pengguna yang baru melakukan top-up (write) dapat langsung membaca data saldo terbarunya meskipun mengakses replika server lain. Implementasinya memanfaatkan version token atau logical timestamp per pengguna, transaksi top-up di server Jakarta meningkatkan versi saldo dan meneruskan informasi versi_minimal ke sisi klien. Saat permintaan berikutnya masuk ke server Bandung, sistem akan membandingkan versi_lokal server dengan versi_minimal dari klien. Jika server Bandung tertinggal (versi_lokal < versi_minimal), sistem mencegah pembacaan data lama melalui beberapa strategi:
 
-        Pendekatan Client-Centric Consistency yang ideal untuk kasus ini adalah Read-Your-Writes Consistency serta opsi Monotonic Reads, yang memastikan pengguna yang baru melakukan top-up (write) dapat langsung membaca data saldo terbarunya meskipun mengakses replika server lain. Implementasinya memanfaatkan version token atau logical timestamp per pengguna, transaksi top-up di server Jakarta meningkatkan versi saldo dan meneruskan informasi versi_minimal ke sisi klien. Saat permintaan berikutnya masuk ke server Bandung, sistem akan membandingkan versi_lokal server dengan versi_minimal dari klien. Jika server Bandung tertinggal (versi_lokal < versi_minimal), sistem mencegah pembacaan data lama melalui beberapa strategi:
+1. Mengalihkan (redirect) Query ke server Jakarta.
+2. Menunggu sinkronisasi selesai (polling dengan timeout).
+3. Menerapkan sticky session sementara pada load balancer agar kueri pengguna tetap mengarah ke server Jakarta hingga replikasi selesai.
 
-        1. Mengalihkan (redirect) Query ke server Jakarta.
-        2. Menunggu sinkronisasi selesai (polling dengan timeout).
-        3. Menerapkan sticky session sementara pada load balancer agar kueri pengguna tetap mengarah ke server Jakarta hingga replikasi selesai.
 
-    </br>
 
 3.  Gambarkan **diagram alir urutan (sequence diagram)** yang menunjukkan operasi read/write antara pelanggan, server Jakarta, server Bandung, dan proses replikasi — untuk skenario **tanpa** jaminan konsistensi (bug terjadi) DAN skenario **dengan** solusi yang kalian usulkan (bug teratasi). Pakai Mermaid (`sequenceDiagram`) di `README.md` — lihat contoh cara pakai di Tugas 2.
     <br>
